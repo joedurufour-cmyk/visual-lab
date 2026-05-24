@@ -107,6 +107,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   <button class="nav-btn" data-tab="vars"><span class="icon">🔀</span><span>Vars</span></button>
   <button class="nav-btn" data-tab="comp"><span class="icon">⚖️</span><span>Comp</span></button>
   <button class="nav-btn blocks" data-tab="blocks"><span class="icon">🧱</span><span>Blocks</span></button>
+  <button class="nav-btn" data-tab="settings"><span class="icon">⚙️</span><span>Config</span></button>
   <button class="nav-btn" data-tab="log"><span class="icon">📝</span><span>Log</span></button>
 </div>
 
@@ -310,6 +311,26 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <button class="btn btn-fail" onclick="saveMixedToLog('fail')">❌</button>
   </div>
 </div>
+</div>
+
+<!-- === SETTINGS (Cloud) === -->
+<div class="section" id="settings">
+<span class="label">Cloud Backend</span>
+<div class="toggle-row"><div class="toggle-label">Use Cloud Mode<small>Send requests to Render backend + Kimi API</small></div><input type="checkbox" id="cloudToggle" onchange="saveCloudConfig()"></div>
+<span class="label">Backend URL</span>
+<input type="text" id="backendUrl" placeholder="https://visual-lab-api.onrender.com" onchange="saveCloudConfig()">
+<span class="label">API Secret</span>
+<input type="text" id="apiSecret" placeholder="vl-pro-secret-key" onchange="saveCloudConfig()">
+<div class="tip-box" style="margin-top:20px">
+<k>How to use:</k><br>
+1. Deploy backend to Render<br>
+2. Copy URL + API secret from Render dashboard<br>
+3. Paste here and enable Cloud Mode<br>
+4. "Native" and "Enhance" will call the real LLM
+</div>
+<span class="label">Connection Test</span>
+<button class="btn btn-kimi" onclick="testConnection()" style="width:100%">Test Connection →</button>
+<div id="connResult" style="margin-top:12px"></div>
 </div>
 
 <!-- === LOG === -->
@@ -761,6 +782,7 @@ document.addEventListener('DOMContentLoaded', function() {
   updateBlockSelectors();
   if (blocks.length > 0) document.getElementById('mixerPanel').style.display = 'block';
 
+  loadCloudConfig();
   showToast('Visual Lab PRO v5 · Blocks ready');
 });
 
@@ -865,6 +887,73 @@ function nativeTranslate() {
   card.appendChild(metaDiv);
   card.appendChild(actions);
   box.appendChild(card);
+}
+
+// ============================================================
+// CLOUD MODE
+// ============================================================
+var CLOUD_CONFIG_KEY = 'vlpro_cloud';
+
+function getCloudConfig() {
+  try { return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveCloudConfig() {
+  var cfg = {
+    enabled: document.getElementById('cloudToggle').checked,
+    url: document.getElementById('backendUrl').value.trim(),
+    secret: document.getElementById('apiSecret').value.trim()
+  };
+  localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
+  showToast(cfg.enabled ? 'Cloud mode ON' : 'Cloud mode OFF');
+}
+
+function loadCloudConfig() {
+  var cfg = getCloudConfig();
+  document.getElementById('cloudToggle').checked = !!cfg.enabled;
+  document.getElementById('backendUrl').value = cfg.url || '';
+  document.getElementById('apiSecret').value = cfg.secret || '';
+}
+
+function isCloudMode() {
+  var cfg = getCloudConfig();
+  return !!(cfg.enabled && cfg.url && cfg.secret);
+}
+
+async function apiCall(endpoint, body) {
+  var cfg = getCloudConfig();
+  var url = cfg.url.replace(/\/+$/, '') + endpoint;
+  try {
+    var resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': cfg.secret
+      },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+      var err = await resp.text();
+      throw new Error('HTTP ' + resp.status + ': ' + err);
+    }
+    return await resp.json();
+  } catch(e) {
+    showToast('Cloud error: ' + e.message);
+    throw e;
+  }
+}
+
+async function testConnection() {
+  var cfg = getCloudConfig();
+  if (!cfg.url || !cfg.secret) { showToast('Fill URL and Secret first'); return; }
+  showToast('Testing...');
+  try {
+    var resp = await fetch(cfg.url.replace(/\/+$/, '') + '/health');
+    var data = await resp.json();
+    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent2)"><k>OK:</k> Backend ' + (data.kimi_configured ? 'ready + LLM connected' : 'ready but NO API key') + '</div>';
+  } catch(e) {
+    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent)"><k>FAIL:</k> ' + e.message + '</div>';
+  }
 }
 
 function kimify(text) {
