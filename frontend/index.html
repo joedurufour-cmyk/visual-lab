@@ -107,7 +107,6 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   <button class="nav-btn" data-tab="vars"><span class="icon">🔀</span><span>Vars</span></button>
   <button class="nav-btn" data-tab="comp"><span class="icon">⚖️</span><span>Comp</span></button>
   <button class="nav-btn blocks" data-tab="blocks"><span class="icon">🧱</span><span>Blocks</span></button>
-  <button class="nav-btn" data-tab="settings"><span class="icon">⚙️</span><span>Config</span></button>
   <button class="nav-btn" data-tab="log"><span class="icon">📝</span><span>Log</span></button>
 </div>
 
@@ -117,22 +116,21 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <textarea id="basePrompt" placeholder="Paste your prompt here..."></textarea>
 <div class="toggle-row"><div class="toggle-label">Brutal Physique<small>Auto-inject hyper musculature hierarchy</small></div><input type="checkbox" id="brutalMode" checked></div>
 <div class="toggle-row"><div class="toggle-label">AR 9:20<small>Phone wallpaper format</small></div><input type="checkbox" id="arLock" checked></div>
-<div class="toggle-row"><div class="toggle-label">Groq Native<small>Apply AI prompt engineering</small></div><input type="checkbox" id="kimiMode" checked></div>
+<div class="toggle-row"><div class="toggle-label">Kimi Native<small>Apply Kimi prompt engineering</small></div><input type="checkbox" id="kimiMode" checked></div>
 <span class="label">Lock</span>
 <div class="chip-grid"><div class="chip locked">Physique</div><div class="chip locked">Light</div><div class="chip locked">Camera</div></div>
 <span class="label">Quick Preset</span>
 <div class="chip-grid"><div class="chip" onclick="preset('anya')">Anya Void</div><div class="chip" onclick="preset('tessa')">Tessa Storm</div><div class="chip" onclick="preset('duo')">Duo Close</div></div>
 <button class="btn btn-generate" onclick="goTo('vars')">Build Variations →</button>
-<button class="btn btn-kimi" onclick="cloudEnhance()" style="width:100%;margin-top:10px">Enhance with AI →</button>
 </div>
 
 <!-- === NATIVE === -->
 <div class="section" id="native">
 <span class="label">Write in your language. I translate.</span>
 <textarea class="native-input" id="nativeInput" placeholder="Tessa Thompson mojada brutal en desierto tactical... Squi, surprise me."></textarea>
-<button class="btn btn-kimi-generate" onclick="nativeTranslate()">AI Translate →</button>
+<button class="btn btn-kimi-generate" onclick="nativeTranslate()">Kimi Translate →</button>
 <div id="nativeResult"></div>
-<span class="label">Groq Native Rules</span>
+<span class="label">Kimi Native Rules</span>
 <div class="tip-box">
 <k>Stylize Inverse:</k> Lower = more realism. <b>240-250</b> = hard cinema sweet spot. 400 = fantasy poster.<br>
 <k>Subject Competition:</k> 1 subject = max detail. 2 = optimal drama. 4+ = epic fantasy.<br>
@@ -160,7 +158,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <!-- === BUILDER === -->
 <div class="section" id="builder">
 <span class="label">6-Section Constructor</span>
-<div class="builder-help">Each section builds a block. AI assembles with optimal hierarchy.</div>
+<div class="builder-help">Each section builds a block. Kimi assembles with optimal hierarchy.</div>
 <div class="category" id="sec-A"><div class="category-title">A. Subjects <span class="toggle-btn" onclick="toggleCat('sec-A')">−</span></div><div class="cat-body">
 <div class="inline-control"><span>Qty:</span><select id="subjQty" onchange="updateSubjFields()"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
 <div id="subj1-block">
@@ -206,7 +204,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <div class="chip-grid" id="artifactChips"></div>
 </div></div>
 <div class="sticky-actions">
-<button class="btn btn-kimi-generate" onclick="buildFromBuilder()">AI Build Prompt →</button>
+<button class="btn btn-kimi-generate" onclick="buildFromBuilder()">Kimi Build Prompt →</button>
 </div>
 <div id="builderResult"></div>
 </div>
@@ -312,26 +310,6 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <button class="btn btn-fail" onclick="saveMixedToLog('fail')">❌</button>
   </div>
 </div>
-</div>
-
-<!-- === SETTINGS (Cloud) === -->
-<div class="section" id="settings">
-<span class="label">Cloud Backend</span>
-<div class="toggle-row"><div class="toggle-label">Use Cloud Mode<small>Send requests to Render backend + Groq API</small></div><input type="checkbox" id="cloudToggle" onchange="saveCloudConfig()"></div>
-<span class="label">Backend URL</span>
-<input type="text" id="backendUrl" placeholder="https://visual-lab-api.onrender.com" onchange="saveCloudConfig()">
-<span class="label">API Secret</span>
-<input type="text" id="apiSecret" placeholder="vl-pro-secret-key" onchange="saveCloudConfig()">
-<div class="tip-box" style="margin-top:20px">
-<k>How to use:</k><br>
-1. Deploy backend to Render<br>
-2. Copy URL + API secret from Render dashboard<br>
-3. Paste here and enable Cloud Mode<br>
-4. "Native" and "Enhance" will call the real LLM
-</div>
-<span class="label">Connection Test</span>
-<button class="btn btn-kimi" onclick="testConnection()" style="width:100%">Test Connection →</button>
-<div id="connResult" style="margin-top:12px"></div>
 </div>
 
 <!-- === LOG === -->
@@ -796,7 +774,6 @@ function switchTab(tab) {
   if (tab === 'log') renderLog();
   if (tab === 'comp') renderCompare();
   if (tab === 'blocks') { renderBlockList(); updateBlockSelectors(); if (blocks.length > 0) { document.getElementById('mixerPanel').style.display = 'block'; updateMixerPreview(); } }
-  if (tab === 'settings') loadCloudConfig();
 }
 
 function goTo(tab) {
@@ -846,166 +823,40 @@ function preset(name) {
 }
 
 // ============================================================
-// CLOUD API FUNCTIONS
+// NATIVE TRANSLATOR
 // ============================================================
-var CLOUD_CONFIG_KEY = 'vlpro_cloud';
-
-function getCloudConfig() {
-  try { return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY) || '{}'); } catch(e) { return {}; }
-}
-
-function saveCloudConfig() {
-  var cfg = {
-    enabled: document.getElementById('cloudToggle').checked,
-    url: document.getElementById('backendUrl').value.trim(),
-    secret: document.getElementById('apiSecret').value.trim()
-  };
-  localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
-  showToast(cfg.enabled ? 'Cloud mode ON' : 'Cloud mode OFF');
-}
-
-function loadCloudConfig() {
-  var cfg = getCloudConfig();
-  document.getElementById('cloudToggle').checked = !!cfg.enabled;
-  document.getElementById('backendUrl').value = cfg.url || '';
-  document.getElementById('apiSecret').value = cfg.secret || '';
-}
-
-function isCloudMode() {
-  var cfg = getCloudConfig();
-  return !!(cfg.enabled && cfg.url && cfg.secret);
-}
-
-async function apiCall(endpoint, body) {
-  var cfg = getCloudConfig();
-  var url = cfg.url.replace(/\/+$/, '') + endpoint;
-  try {
-    var resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': cfg.secret
-      },
-      body: JSON.stringify(body)
-    });
-    if (!resp.ok) {
-      var err = await resp.text();
-      throw new Error('HTTP ' + resp.status + ': ' + err);
-    }
-    return await resp.json();
-  } catch(e) {
-    showToast('Cloud error: ' + e.message);
-    throw e;
-  }
-}
-
-async function testConnection() {
-  var cfg = getCloudConfig();
-  if (!cfg.url || !cfg.secret) { showToast('Fill URL and Secret first'); return; }
-  showToast('Testing...');
-  try {
-    var resp = await fetch(cfg.url.replace(/\/+$/, '') + '/health');
-    var data = await resp.json();
-    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent2)"><k>OK:</k> Backend ' + (data.groq_configured ? 'ready + LLM connected' : 'ready but NO API key') + '</div>';
-  } catch(e) {
-    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent)"><k>FAIL:</k> ' + esc(e.message) + '</div>';
-  }
-}
-
-async function cloudNativeTranslate() {
+function nativeTranslate() {
   var input = document.getElementById('nativeInput').value.trim();
   if (!input) { showToast('Write something'); return; }
-  showToast('Asking LLM...');
-  try {
-    var data = await apiCall('/api/translate', {
-      text: input,
-      mode: 'native',
-      ar: document.getElementById('arLock').checked ? '9:20' : '9:16',
-      chaos: 15,
-      stylize: 250
-    });
-    renderNativeResult(data.prompt, data.tokens, data.meta);
-  } catch(e) { /* toast already shown */ }
-}
-
-async function cloudEnhance() {
-  var prompt = document.getElementById('basePrompt').value.trim();
-  if (!prompt) { showToast('Paste prompt first'); return; }
-  showToast('Enhancing...');
-  try {
-    var data = await apiCall('/api/enhance', {
-      prompt: prompt,
-      instruction: 'enhance realism and muscular definition hierarchy',
-      ar: document.getElementById('arLock').checked ? '9:20' : '9:16',
-      chaos: 15,
-      stylize: 250
-    });
-    document.getElementById('basePrompt').value = data.prompt;
-    showToast('Enhanced! ' + data.tokens + ' tokens');
-  } catch(e) { /* toast already shown */ }
-}
-
-async function cloudGenerateVariations() {
-  var base = document.getElementById('basePrompt').value.trim();
-  if (!base) { showToast('No prompt'); return; }
-  var actresses = getMultiActive('actressChips');
-  var cloths = getMultiActive('clothingChips');
-  var settings = getMultiActive('settingChips');
-  var lights = getMultiActive('lightingChips');
-  var phys = getSingleActive('physChips') || 'Brutal defined';
-  var c = getSingleActive('chaosChips') || '15';
-  var st = getSingleActive('stylizeChips') || '80';
-  var n = parseInt(document.getElementById('varCount').value) || 4;
-  showToast('Generating ' + n + ' via cloud...');
-  try {
-    var data = await apiCall('/api/variations', {
-      base_prompt: base,
-      actresses: actresses,
-      physiques: [phys],
-      clothing: cloths,
-      settings: settings,
-      lighting: lights,
-      count: n,
-      ar: document.getElementById('arLock').checked ? '9:20' : '9:16',
-      chaos: parseInt(c) || 15,
-      stylize: parseInt(st) || 250
-    });
-    var results = (data.variations || []).map(function(v, i) {
-      return { id: Date.now() + i, prompt: v.prompt, changed: v.changed, chaos: c, stylize: st, time: new Date().toISOString() };
-    });
-    renderResults(results);
-  } catch(e) { /* toast already shown */ }
-}
-
-function renderNativeResult(prompt, tokens, meta) {
+  var result = kimify(input);
   var box = document.getElementById('nativeResult');
   box.innerHTML = '';
   var card = document.createElement('div');
   card.className = 'native-result';
   var tag = document.createElement('div');
   tag.className = 'tag';
-  tag.textContent = isCloudMode() ? 'Cloud Output' : 'Native Output';
+  tag.textContent = 'Kimi Native Output';
   var promptDiv = document.createElement('div');
   promptDiv.className = 'prompt-text';
-  promptDiv.textContent = prompt;
+  promptDiv.textContent = result.prompt;
   var metaDiv = document.createElement('div');
   metaDiv.className = 'meta';
   metaDiv.style.marginTop = '8px';
-  metaDiv.textContent = 'Tokens: ~' + tokens + ' | AR: ' + (meta.ar || '9:20');
+  metaDiv.textContent = 'Tokens: ~' + result.tokens + ' | Physique priority: ' + (result.physiqueFirst ? 'YES' : 'NO');
   var actions = document.createElement('div');
   actions.className = 'actions';
   var copyBtn = document.createElement('button');
-  copyBtn.className = 'btn btn-kimi'; copyBtn.textContent = 'Copy'
+  copyBtn.className = 'btn btn-kimi';
   copyBtn.textContent = 'Copy';
-  copyBtn.onclick = function() { copyText(prompt); };
+  copyBtn.onclick = function() { copyText(result.prompt); };
   var winBtn = document.createElement('button');
   winBtn.className = 'btn btn-win';
   winBtn.textContent = '✅';
-  winBtn.onclick = function() { logNative(prompt, 'win'); };
+  winBtn.onclick = function() { logNative(result.prompt, 'win'); };
   var failBtn = document.createElement('button');
   failBtn.className = 'btn btn-fail';
   failBtn.textContent = '❌';
-  failBtn.onclick = function() { logNative(prompt, 'fail'); };
+  failBtn.onclick = function() { logNative(result.prompt, 'fail'); };
   actions.appendChild(copyBtn);
   actions.appendChild(winBtn);
   actions.appendChild(failBtn);
@@ -1014,20 +865,6 @@ function renderNativeResult(prompt, tokens, meta) {
   card.appendChild(metaDiv);
   card.appendChild(actions);
   box.appendChild(card);
-}
-
-// ============================================================
-// NATIVE TRANSLATOR
-// ============================================================
-function nativeTranslate() {
-  if (isCloudMode()) {
-    cloudNativeTranslate();
-    return;
-  }
-  var input = document.getElementById('nativeInput').value.trim();
-  if (!input) { showToast('Write something'); return; }
-  var result = groqify(input);
-  renderNativeResult(result.prompt, result.tokens, {physiqueFirst: result.physiqueFirst, ar: '9:20'});
 }
 
 function kimify(text) {
@@ -1220,10 +1057,6 @@ function pickRandom(arr) {
 }
 
 function generate() {
-  if (isCloudMode()) {
-    cloudGenerateVariations();
-    return;
-  }
   var base = document.getElementById('basePrompt').value.trim();
   if (!base) { showToast('No prompt'); return; }
   var brutal = document.getElementById('brutalMode').checked;
@@ -1356,7 +1189,7 @@ function logResult(id, status) {
 }
 
 function logNative(prompt, status) {
-  var item = { id: Date.now(), prompt: prompt, changed: 'Groq Native', status: status, chaos: '15', stylize: '250', time: new Date().toISOString(), loggedAt: new Date().toISOString() };
+  var item = { id: Date.now(), prompt: prompt, changed: 'Kimi Native', status: status, chaos: '15', stylize: '250', time: new Date().toISOString(), loggedAt: new Date().toISOString() };
   exps.unshift(item);
   save();
   showToast(status === 'win' ? 'Wujuuuu!' : 'Baneado');
@@ -1388,11 +1221,11 @@ function renderLog() {
     var st = e.status || 'untested';
     var dotClass = st === 'win' ? 'win' : st === 'fail' ? 'fail' : '';
     var dateStr = new Date(e.time).toLocaleDateString();
-    var isGroq = e.changed === 'Groq Native';
+    var isKimi = e.changed === 'Kimi Native';
     var isMixer = (e.changed || '').indexOf('Mixer') === 0;
     d.innerHTML =
       '<div class="status-dot ' + dotClass + '"></div>' +
-      '<div class="info"><div class="title">' + esc(e.changed || 'Base') + (isGroq ? ' <span style="color:var(--kimi)">[G]</span>' : '') + (isMixer ? ' <span style="color:#ff9933">[🧱]</span>' : '') + '</div>' +
+      '<div class="info"><div class="title">' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + (isMixer ? ' <span style="color:#ff9933">[🧱]</span>' : '') + '</div>' +
       '<div class="date">' + dateStr + ' · c' + e.chaos + ' s' + e.stylize + '</div></div>' +
       '<div style="display:flex;gap:6px">' +
       '<button class="btn" style="padding:6px 12px;font-size:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="copyLogPrompt(' + e.id + ')">Copy</button>' +
@@ -1423,9 +1256,9 @@ function renderCompare() {
     var d = document.createElement('div');
     d.className = 'compare-item';
     d.dataset.id = e.id;
-    var isGroq = e.changed === 'Groq Native';
+    var isKimi = e.changed === 'Kimi Native';
     d.innerHTML =
-      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(e.changed || 'Base') + (isGroq ? ' <span style="color:var(--kimi)">[G]</span>' : '') + '</div>' +
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</div>' +
       '<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc((e.prompt || '').substring(0, 60)) + '...</div>';
     d.addEventListener('click', function() {
       var id = parseInt(this.dataset.id);
@@ -1446,9 +1279,9 @@ function runCompare() {
     var e = selected[i];
     var d = document.createElement('div');
     d.className = 'prompt-card';
-    var isGroq = e.changed === 'Groq Native';
+    var isKimi = e.changed === 'Kimi Native';
     d.innerHTML =
-      '<div class="meta"><span>' + esc(e.changed || 'Base') + (isGroq ? ' <span style="color:var(--kimi)">[G]</span>' : '') + '</span><span>c' + e.chaos + ' s' + e.stylize + '</span></div>' +
+      '<div class="meta"><span>' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</span><span>c' + e.chaos + ' s' + e.stylize + '</span></div>' +
       '<div class="prompt-text">' + esc(e.prompt || '') + '</div>' +
       '<button class="btn btn-copy" style="margin-top:10px" onclick="copyText(\'' + esc((e.prompt || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">Copy This</button>';
     box.appendChild(d);
