@@ -117,7 +117,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <textarea id="basePrompt" placeholder="Paste your prompt here..."></textarea>
 <div class="toggle-row"><div class="toggle-label">Brutal Physique<small>Auto-inject hyper musculature hierarchy</small></div><input type="checkbox" id="brutalMode" checked></div>
 <div class="toggle-row"><div class="toggle-label">AR 9:20<small>Phone wallpaper format</small></div><input type="checkbox" id="arLock" checked></div>
-<div class="toggle-row"><div class="toggle-label">Kimi Native<small>Apply Kimi prompt engineering</small></div><input type="checkbox" id="kimiMode" checked></div>
+<div class="toggle-row"><div class="toggle-label">Groq Native<small>Apply AI prompt engineering</small></div><input type="checkbox" id="kimiMode" checked></div>
 <span class="label">Lock</span>
 <div class="chip-grid"><div class="chip locked">Physique</div><div class="chip locked">Light</div><div class="chip locked">Camera</div></div>
 <span class="label">Quick Preset</span>
@@ -130,9 +130,9 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <div class="section" id="native">
 <span class="label">Write in your language. I translate.</span>
 <textarea class="native-input" id="nativeInput" placeholder="Tessa Thompson mojada brutal en desierto tactical... Squi, surprise me."></textarea>
-<button class="btn btn-kimi-generate" onclick="nativeTranslate()">Kimi Translate →</button>
+<button class="btn btn-kimi-generate" onclick="nativeTranslate()">AI Translate →</button>
 <div id="nativeResult"></div>
-<span class="label">Kimi Native Rules</span>
+<span class="label">Groq Native Rules</span>
 <div class="tip-box">
 <k>Stylize Inverse:</k> Lower = more realism. <b>240-250</b> = hard cinema sweet spot. 400 = fantasy poster.<br>
 <k>Subject Competition:</k> 1 subject = max detail. 2 = optimal drama. 4+ = epic fantasy.<br>
@@ -160,7 +160,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <!-- === BUILDER === -->
 <div class="section" id="builder">
 <span class="label">6-Section Constructor</span>
-<div class="builder-help">Each section builds a block. Kimi assembles with optimal hierarchy.</div>
+<div class="builder-help">Each section builds a block. AI assembles with optimal hierarchy.</div>
 <div class="category" id="sec-A"><div class="category-title">A. Subjects <span class="toggle-btn" onclick="toggleCat('sec-A')">−</span></div><div class="cat-body">
 <div class="inline-control"><span>Qty:</span><select id="subjQty" onchange="updateSubjFields()"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
 <div id="subj1-block">
@@ -206,7 +206,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <div class="chip-grid" id="artifactChips"></div>
 </div></div>
 <div class="sticky-actions">
-<button class="btn btn-kimi-generate" onclick="buildFromBuilder()">Kimi Build Prompt →</button>
+<button class="btn btn-kimi-generate" onclick="buildFromBuilder()">AI Build Prompt →</button>
 </div>
 <div id="builderResult"></div>
 </div>
@@ -317,7 +317,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 <!-- === SETTINGS (Cloud) === -->
 <div class="section" id="settings">
 <span class="label">Cloud Backend</span>
-<div class="toggle-row"><div class="toggle-label">Use Cloud Mode<small>Send requests to Render backend + Kimi API</small></div><input type="checkbox" id="cloudToggle" onchange="saveCloudConfig()"></div>
+<div class="toggle-row"><div class="toggle-label">Use Cloud Mode<small>Send requests to Render backend + Groq API</small></div><input type="checkbox" id="cloudToggle" onchange="saveCloudConfig()"></div>
 <span class="label">Backend URL</span>
 <input type="text" id="backendUrl" placeholder="https://visual-lab-api.onrender.com" onchange="saveCloudConfig()">
 <span class="label">API Secret</span>
@@ -906,7 +906,7 @@ async function testConnection() {
   try {
     var resp = await fetch(cfg.url.replace(/\/+$/, '') + '/health');
     var data = await resp.json();
-    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent2)"><k>OK:</k> Backend ' + (data.kimi_configured ? 'ready + Kimi connected' : 'ready but NO Kimi key') + '</div>';
+    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent2)"><k>OK:</k> Backend ' + (data.groq_configured ? 'ready + LLM connected' : 'ready but NO API key') + '</div>';
   } catch(e) {
     document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent)"><k>FAIL:</k> ' + esc(e.message) + '</div>';
   }
@@ -915,7 +915,7 @@ async function testConnection() {
 async function cloudNativeTranslate() {
   var input = document.getElementById('nativeInput').value.trim();
   if (!input) { showToast('Write something'); return; }
-  showToast('Asking Kimi...');
+  showToast('Asking LLM...');
   try {
     var data = await apiCall('/api/translate', {
       text: input,
@@ -984,7 +984,7 @@ function renderNativeResult(prompt, tokens, meta) {
   card.className = 'native-result';
   var tag = document.createElement('div');
   tag.className = 'tag';
-  tag.textContent = isCloudMode() ? 'Kimi Cloud Output' : 'Kimi Native Output';
+  tag.textContent = isCloudMode() ? 'Cloud Output' : 'Native Output';
   var promptDiv = document.createElement('div');
   promptDiv.className = 'prompt-text';
   promptDiv.textContent = prompt;
@@ -995,7 +995,7 @@ function renderNativeResult(prompt, tokens, meta) {
   var actions = document.createElement('div');
   actions.className = 'actions';
   var copyBtn = document.createElement('button');
-  copyBtn.className = 'btn btn-kimi';
+  copyBtn.className = 'btn btn-kimi'; copyBtn.textContent = 'Copy'
   copyBtn.textContent = 'Copy';
   copyBtn.onclick = function() { copyText(prompt); };
   var winBtn = document.createElement('button');
@@ -1026,7 +1026,7 @@ function nativeTranslate() {
   }
   var input = document.getElementById('nativeInput').value.trim();
   if (!input) { showToast('Write something'); return; }
-  var result = kimify(input);
+  var result = groqify(input);
   renderNativeResult(result.prompt, result.tokens, {physiqueFirst: result.physiqueFirst, ar: '9:20'});
 }
 
@@ -1335,7 +1335,7 @@ function logResult(id, status) {
 }
 
 function logNative(prompt, status) {
-  var item = { id: Date.now(), prompt: prompt, changed: 'Kimi Native', status: status, chaos: '15', stylize: '250', time: new Date().toISOString(), loggedAt: new Date().toISOString() };
+  var item = { id: Date.now(), prompt: prompt, changed: 'Groq Native', status: status, chaos: '15', stylize: '250', time: new Date().toISOString(), loggedAt: new Date().toISOString() };
   exps.unshift(item);
   save();
   showToast(status === 'win' ? 'Wujuuuu!' : 'Baneado');
@@ -1367,11 +1367,11 @@ function renderLog() {
     var st = e.status || 'untested';
     var dotClass = st === 'win' ? 'win' : st === 'fail' ? 'fail' : '';
     var dateStr = new Date(e.time).toLocaleDateString();
-    var isKimi = e.changed === 'Kimi Native';
+    var isGroq = e.changed === 'Groq Native';
     var isMixer = (e.changed || '').indexOf('Mixer') === 0;
     d.innerHTML =
       '<div class="status-dot ' + dotClass + '"></div>' +
-      '<div class="info"><div class="title">' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + (isMixer ? ' <span style="color:#ff9933">[🧱]</span>' : '') + '</div>' +
+      '<div class="info"><div class="title">' + esc(e.changed || 'Base') + (isGroq ? ' <span style="color:var(--kimi)">[G]</span>' : '') + (isMixer ? ' <span style="color:#ff9933">[🧱]</span>' : '') + '</div>' +
       '<div class="date">' + dateStr + ' · c' + e.chaos + ' s' + e.stylize + '</div></div>' +
       '<div style="display:flex;gap:6px">' +
       '<button class="btn" style="padding:6px 12px;font-size:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="copyLogPrompt(' + e.id + ')">Copy</button>' +
@@ -1402,9 +1402,9 @@ function renderCompare() {
     var d = document.createElement('div');
     d.className = 'compare-item';
     d.dataset.id = e.id;
-    var isKimi = e.changed === 'Kimi Native';
+    var isGroq = e.changed === 'Groq Native';
     d.innerHTML =
-      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</div>' +
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(e.changed || 'Base') + (isGroq ? ' <span style="color:var(--kimi)">[G]</span>' : '') + '</div>' +
       '<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc((e.prompt || '').substring(0, 60)) + '...</div>';
     d.addEventListener('click', function() {
       var id = parseInt(this.dataset.id);
@@ -1425,9 +1425,9 @@ function runCompare() {
     var e = selected[i];
     var d = document.createElement('div');
     d.className = 'prompt-card';
-    var isKimi = e.changed === 'Kimi Native';
+    var isGroq = e.changed === 'Groq Native';
     d.innerHTML =
-      '<div class="meta"><span>' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</span><span>c' + e.chaos + ' s' + e.stylize + '</span></div>' +
+      '<div class="meta"><span>' + esc(e.changed || 'Base') + (isGroq ? ' <span style="color:var(--kimi)">[G]</span>' : '') + '</span><span>c' + e.chaos + ' s' + e.stylize + '</span></div>' +
       '<div class="prompt-text">' + esc(e.prompt || '') + '</div>' +
       '<button class="btn btn-copy" style="margin-top:10px" onclick="copyText(\'' + esc((e.prompt || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")) + '\')">Copy This</button>';
     box.appendChild(d);
