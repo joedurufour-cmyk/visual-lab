@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DataForge — Query Engine</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#000;--surface:#0a0a0a;--surface2:#141414;--surface3:#1a1a1a;--border:#222;--text:#e8e8e8;--text2:#888;--text3:#555;--accent:#ff3366;--accent2:#33ff88;--accent3:#3388ff;--warn:#ffaa33;--info:#cc77ff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:20px}
+.header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px}
+.header h1{font-size:18px;font-weight:700;letter-spacing:0.5px}
+.header .badge{font-size:10px;color:var(--info);text-transform:uppercase;letter-spacing:1px;border:1px solid var(--info);padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block}
+.section{padding:16px}
+.label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin:20px 0 8px}
+.btn{flex:1;padding:16px;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:#fff;margin:4px 0}
+.btn-alt{background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.btn-info{background:var(--info);color:#fff}
+.btn-row{display:flex;gap:10px;margin:8px 0}
+.btn-row .btn{margin:0}
+.dropzone{border:2px dashed var(--border);border-radius:16px;padding:40px 20px;text-align:center;color:var(--text2);font-size:14px;background:var(--surface);margin:12px 0}
+.dropzone.active{border-color:var(--accent);color:var(--text)}
+.dropzone .icon{font-size:48px;margin-bottom:12px;display:block}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th{background:var(--surface2);padding:10px 8px;text-align:left;border:1px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:10px 8px;border:1px solid var(--border);color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:hover td{background:var(--surface3);color:var(--text)}
+.query-box{background:var(--surface3);border:2px solid var(--info);border-radius:14px;padding:16px;font-size:14px;font-family:monospace;min-height:80px;width:100%;color:var(--text);outline:none;resize:vertical}
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:12px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;user-select:none;color:var(--text2)}
+.chip.active{background:var(--info);border-color:var(--info);color:#fff;font-weight:600}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin:12px 0}
+.result-card .meta{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat .num{font-size:24px;font-weight:700;color:var(--accent)}
+.stat .lab{font-size:11px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:200;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.collapsed .cat-body{display:none}
+.category{margin:16px 0;padding:16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+.category-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:12px;display:flex;justify-content:space-between;cursor:pointer}
+.json-preview{background:var(--surface2);border-radius:10px;padding:12px;font-size:12px;font-family:monospace;color:var(--text3);max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.export-row{display:flex;gap:10px;margin-top:12px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="header"><h1>DataForge</h1><div class="badge">Query Engine · Offline</div></div>
+
+<div class="section">
+  <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <span class="icon">📁</span>
+    <div>Tap to load CSV, JSON, or XLSX</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px">Everything stays on your device</div>
+  </div>
+  <input type="file" id="fileInput" accept=".csv,.json,.xlsx" style="display:none" onchange="handleFile(this.files[0])">
+
+  <div class="stats" id="stats">
+    <div class="stat"><div class="num" id="stat-rows">0</div><div class="lab">Rows</div></div>
+    <div class="stat"><div class="num" id="stat-cols">0</div><div class="lab">Columns</div></div>
+  </div>
+
+  <div class="category"><div class="category-title" onclick="toggleCat(this.parentElement)">Preset Queries <span style="color:var(--info)">−</span></div>
+    <div class="cat-body">
+      <div class="chip-grid">
+        <div class="chip" onclick="runPreset('top10')">Top 10 rows</div>
+        <div class="chip" onclick="runPreset('count')">Count all</div>
+        <div class="chip" onclick="runPreset('unique')">Unique values</div>
+        <div class="chip" onclick="runPreset('sortDesc')">Sort desc</div>
+        <div class="chip" onclick="runPreset('filterNulls')">Filter nulls</div>
+        <div class="chip" onclick="runPreset('numericAgg')">Sum / Avg / Max</div>
+        <div class="chip" onclick="runPreset('groupByFirst')">Group by first col</div>
+        <div class="chip" onclick="runPreset('searchText')">Search text</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="category"><div class="category-title" onclick="toggleCat(this.parentElement)">Custom Query <span style="color:var(--info)">−</span></div>
+    <div class="cat-body">
+      <div class="chip-grid" style="margin-bottom:12px">
+        <div class="chip" onclick="insertOp('filter')">filter()</div>
+        <div class="chip" onclick="insertOp('map')">map()</div>
+        <div class="chip" onclick="insertOp('sort')">sort()</div>
+        <div class="chip" onclick="insertOp('reduce')">reduce()</div>
+        <div class="chip" onclick="insertOp('group')">groupBy()</div>
+        <div class="chip" onclick="insertOp('slice')">slice()</div>
+      </div>
+      <textarea class="query-box" id="customQuery" placeholder="data.filter(r => r.price > 100).sort((a,b) => b.price - a.price)"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-info" onclick="runCustom()">▶ Run</button>
+        <button class="btn btn-alt" onclick="clearQuery()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="output"></div>
+
+  <div class="btn-row" id="exportBar" style="display:none">
+    <button class="btn btn-alt" onclick="exportCSV()">Export CSV</button>
+    <button class="btn btn-alt" onclick="exportJSON()">Export JSON</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<script>
+var data = [];
+var columns = [];
+var currentResult = [];
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'json') {
+      try {
+        var parsed = JSON.parse(e.target.result);
+        data = Array.isArray(parsed) ? parsed : [parsed];
+        initColumns();
+        showToast('JSON loaded: ' + data.length + ' rows');
+      } catch(err) { showToast('Invalid JSON'); }
+    } else if (ext === 'csv') {
+      parseCSV(e.target.result);
+      showToast('CSV loaded: ' + data.length + ' rows');
+    } else if (ext === 'xlsx') {
+      var buf = e.target.result;
+      var wb = XLSX.read(new Uint8Array(buf), {type:'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var json = XLSX.utils.sheet_to_json(ws, {header:1});
+      if (json.length > 1) {
+        var headers = json[0];
+        data = [];
+        for (var i = 1; i < json.length; i++) {
+          var row = {};
+          for (var j = 0; j < headers.length; j++) {
+            row[headers[j]] = json[i][j];
+          }
+          data.push(row);
+        }
+        initColumns();
+        showToast('XLSX loaded: ' + data.length + ' rows');
+      }
+    }
+    updateStats();
+    renderTable(data.slice(0, 20), 'Preview (first 20)');
+  };
+  if (file.name.endsWith('.xlsx')) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  var lines = text.trim().split('\n');
+  if (lines.length < 2) { showToast('Empty CSV'); return; }
+  var headers = parseCSVLine(lines[0]);
+  data = [];
+  for (var i = 1; i < lines.length; i++) {
+    var vals = parseCSVLine(lines[i]);
+    var row = {};
+    for (var j = 0; j < headers.length; j++) {
+      var v = vals[j];
+      var n = parseFloat(v);
+      row[headers[j]] = (v !== '' && !isNaN(n) && String(n) === v) ? n : v;
+    }
+    data.push(row);
+  }
+  initColumns();
+}
+
+function parseCSVLine(line) {
+  var result = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') { inQ = !inQ; continue; }
+    if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function initColumns() {
+  columns = data.length > 0 ? Object.keys(data[0]) : [];
+}
+
+function updateStats() {
+  document.getElementById('stat-rows').textContent = data.length;
+  document.getElementById('stat-cols').textContent = columns.length;
+}
+
+function renderTable(rows, title) {
+  currentResult = rows;
+  var out = document.getElementById('output');
+  if (!rows || rows.length === 0) {
+    out.innerHTML = '<div class="result-card"><div class="meta"><span>' + (title || 'Result') + '</span><span>0 rows</span></div><div style="color:var(--text2);padding:20px;text-align:center">No results</div></div>';
+    document.getElementById('exportBar').style.display = 'none';
+    return;
+  }
+  var cols = Object.keys(rows[0]);
+  var html = '<div class="result-card"><div class="meta"><span>' + (title || 'Result') + '</span><span>' + rows.length + ' rows</span></div>';
+  html += '<div style="overflow-x:auto"><table><thead><tr>';
+  for (var c = 0; c < cols.length; c++) html += '<th>' + esc(cols[c]) + '</th>';
+  html += '</tr></thead><tbody>';
+  for (var r = 0; r < rows.length; r++) {
+    html += '<tr>';
+    for (var c = 0; c < cols.length; c++) {
+      var v = rows[r][cols[c]];
+      html += '<td>' + esc(String(v !== undefined && v !== null ? v : '')) + '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table></div></div>';
+  out.innerHTML = html;
+  document.getElementById('exportBar').style.display = 'flex';
+}
+
+function esc(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function runPreset(name) {
+  if (!data.length) { showToast('Load data first'); return; }
+  var result;
+  if (name === 'top10') {
+    result = data.slice(0, 10);
+    renderTable(result, 'Top 10');
+  } else if (name === 'count') {
+    result = [{total_rows: data.length, columns: columns.length}];
+    renderTable(result, 'Count');
+  } else if (name === 'unique') {
+    var col = columns[0];
+    var vals = {};
+    for (var i = 0; i < data.length; i++) vals[data[i][col]] = true;
+    result = Object.keys(vals).map(function(v) { return {}; result[result.length-1][col] = v; });
+    renderTable(result, 'Unique in ' + col);
+  } else if (name === 'sortDesc') {
+    var col = findNumericCol();
+    if (!col) col = columns[0];
+    result = data.slice().sort(function(a,b) {
+      var av = a[col], bv = b[col];
+      if (typeof av === 'number' && typeof bv === 'number') return bv - av;
+      return String(bv).localeCompare(String(av));
+    });
+    renderTable(result.slice(0, 20), 'Sort by ' + col + ' (desc)');
+  } else if (name === 'filterNulls') {
+    var col = columns[0];
+    result = data.filter(function(r) { return r[col] !== null && r[col] !== undefined && r[col] !== ''; });
+    renderTable(result.slice(0, 20), 'Non-null ' + col);
+  } else if (name === 'numericAgg') {
+    var col = findNumericCol();
+    if (!col) { showToast('No numeric column found'); return; }
+    var sum = 0, min = Infinity, max = -Infinity, cnt = 0;
+    for (var i = 0; i < data.length; i++) {
+      var v = data[i][col];
+      if (typeof v === 'number') { sum += v; cnt++; if (v < min) min = v; if (v > max) max = v; }
+    }
+    result = [{column: col, count: cnt, sum: sum.toFixed(2), avg: (sum/cnt).toFixed(2), min: min === Infinity ? 'N/A' : min, max: max === -Infinity ? 'N/A' : max}];
+    renderTable(result, 'Aggregation');
+  } else if (name === 'groupByFirst') {
+    var col = columns[0];
+    var groups = {};
+    for (var i = 0; i < data.length; i++) {
+      var k = data[i][col];
+      groups[k] = (groups[k] || 0) + 1;
+    }
+    result = Object.keys(groups).map(function(k) { return {value: k, count: groups[k]}; });
+    renderTable(result, 'Group by ' + col);
+  } else if (name === 'searchText') {
+    var term = prompt('Search term (case-insensitive):');
+    if (!term) return;
+    var low = term.toLowerCase();
+    result = data.filter(function(r) {
+      for (var k in r) { if (String(r[k]).toLowerCase().indexOf(low) !== -1) return true; }
+      return false;
+    });
+    renderTable(result.slice(0, 50), 'Search: "' + term + '"');
+  }
+}
+
+function findNumericCol() {
+  for (var i = 0; i < data.length; i++) {
+    for (var c = 0; c < columns.length; c++) {
+      if (typeof data[i][columns[c]] === 'number') return columns[c];
+    }
+  }
+  return null;
+}
+
+function insertOp(op) {
+  var ta = document.getElementById('customQuery');
+  var snippets = {
+    filter: "data.filter(r => r.columnName > 100)",
+    map: "data.map(r => ({name: r.name, doubled: r.value * 2}))",
+    sort: "data.sort((a,b) => b.columnName - a.columnName)",
+    reduce: "data.reduce((sum, r) => sum + r.columnName, 0)",
+    group: "Object.groupBy ? Object.groupBy(data, r => r.category) : groupBy(data, 'category')",
+    slice: "data.slice(0, 20)"
+  };
+  ta.value = (ta.value ? ta.value + '\n' : '') + snippets[op];
+}
+
+function runCustom() {
+  if (!data.length) { showToast('Load data first'); return; }
+  var code = document.getElementById('customQuery').value.trim();
+  if (!code) { showToast('Empty query'); return; }
+  try {
+    var fn = new Function('data', 'columns', 'groupBy', '"use strict"; return (' + code + ')');
+    var result = fn(data, columns, groupByHelper);
+    if (Array.isArray(result)) {
+      renderTable(result.slice(0, 100), 'Custom query');
+    } else {
+      renderTable([{result: JSON.stringify(result)}], 'Custom query (scalar)');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+function groupByHelper(arr, key) {
+  var groups = {};
+  for (var i = 0; i < arr.length; i++) {
+    var k = arr[i][key];
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(arr[i]);
+  }
+  return groups;
+}
+
+function clearQuery() {
+  document.getElementById('customQuery').value = '';
+}
+
+function toggleCat(el) {
+  el.classList.toggle('collapsed');
+}
+
+function exportCSV() {
+  if (!currentResult.length) return;
+  var cols = Object.keys(currentResult[0]);
+  var csv = cols.join(',') + '\n';
+  for (var i = 0; i < currentResult.length; i++) {
+    var row = [];
+    for (var c = 0; c < cols.length; c++) {
+      var v = currentResult[i][cols[c]];
+      v = v !== undefined && v !== null ? String(v).replace(/"/g, '""') : '';
+      row.push('"' + v + '"');
+    }
+    csv += row.join(',') + '\n';
+  }
+  download(csv, 'export.csv', 'text/csv');
+  showToast('CSV exported');
+}
+
+function exportJSON() {
+  if (!currentResult.length) return;
+  download(JSON.stringify(currentResult, null, 2), 'export.json', 'application/json');
+  showToast('JSON exported');
+}
+
+function download(content, filename, type) {
+  var blob = new Blob([content], {type: type});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Drag drop
+var dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('active'); });
+dz.addEventListener('dragleave', function(e) { e.preventDefault(); this.classList.remove('active'); });
+dz.addEventListener('drop', function(e) { e.preventDefault(); this.classList.remove('active'); handleFile(e.dataTransfer.files[0]); });
+
+// Demo data on load for testing
+setTimeout(function() {
+  data = [
+    {producto: 'Widget-A', categoria: 'Electrónica', precio: 120, stock: 45, ventas: 230},
+    {producto: 'Widget-B', categoria: 'Electrónica', precio: 85, stock: 120, ventas: 410},
+    {producto: 'Gizmo-X', categoria: 'Hogar', precio: 45, stock: 200, ventas: 890},
+    {producto: 'Gadget-Z', categoria: 'Electrónica', precio: 199, stock: 12, ventas: 67},
+    {producto: 'Tool-9', categoria: 'Industrial', precio: 340, stock: 8, ventas: 34},
+    {producto: 'Sprocket', categoria: 'Industrial', precio: 78, stock: 55, ventas: 156},
+    {producto: 'Doohickey', categoria: 'Hogar', precio: 22, stock: 300, ventas: 1200},
+    {producto: 'Thingamajig', categoria: 'Electrónica', precio: 150, stock: 30, ventas: 180}
+  ];
+  initColumns();
+  updateStats();
+  renderTable(data, 'Demo Data (tap a preset)');
+  showToast('Demo data loaded — tap presets to test');
+}, 300);
+</script>
+</body>
+</html>

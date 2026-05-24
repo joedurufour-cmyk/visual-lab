@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Visual Lab PRO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#000;--surface:#0a0a0a;--surface2:#141414;--surface3:#1a1a1a;--border:#222;--text:#e8e8e8;--text2:#888;--text3:#555;--accent:#ff3366;--accent2:#33ff88;--accent3:#3388ff;--warn:#ffaa33;--kimi:#cc77ff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:90px}
+.header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:700;letter-spacing:0.5px}
+.header .badge{font-size:10px;color:var(--kimi);text-transform:uppercase;letter-spacing:1px;border:1px solid var(--kimi);padding:2px 8px;border-radius:10px}
+.section{display:none;padding:16px;animation:fadeIn .3s}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin:20px 0 8px}
+.label small{color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0}
+textarea,input[type="text"],input[type="number"],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-size:15px;font-family:inherit;outline:none;resize:vertical}
+textarea{min-height:100px}
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:10px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;user-select:none;color:var(--text2)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.chip.locked{border-color:var(--accent2);color:var(--accent2)}
+.chip.kimi{border-color:var(--kimi);color:var(--kimi)}
+.chip.kimi.active{background:var(--kimi);color:#fff}
+.category{margin:20px 0;padding:16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+.category-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:12px;display:flex;justify-content:space-between}
+.category-title .toggle-btn{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600}
+.collapsed .cat-body{display:none}
+.prompt-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin:16px 0}
+.prompt-card .meta{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between}
+.prompt-card .meta .changed{color:var(--warn);font-weight:700}
+.prompt-text{font-size:14px;line-height:1.6;word-break:break-word;font-family:monospace;color:var(--text);padding:10px;background:var(--surface2);border-radius:8px;margin:8px 0}
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{flex:1;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-copy{background:var(--accent);color:#fff}
+.btn-kimi{background:var(--kimi);color:#fff}
+.btn-win{background:var(--surface2);border:1px solid var(--accent2);color:var(--accent2);font-size:13px;padding:10px;min-width:50px}
+.btn-fail{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-size:13px;padding:10px;min-width:50px}
+.btn-generate{background:var(--accent);color:#fff;width:100%;margin:20px 0;padding:18px;font-size:16px}
+.btn-kimi-generate{background:var(--kimi);color:#fff;width:100%;margin:20px 0;padding:18px;font-size:16px}
+.log-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border-radius:12px;margin:8px 0;border:1px solid var(--border)}
+.log-item .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.log-item .status-dot.win{background:var(--accent2)}
+.log-item .status-dot.fail{background:var(--accent)}
+.log-item .info{flex:1;min-width:0}
+.log-item .title{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-item .date{font-size:11px;color:var(--text2)}
+.empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
+.empty .icon{font-size:48px;margin-bottom:12px;opacity:.5}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:200;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.inline-control{display:flex;align-items:center;gap:10px;margin:8px 0}
+.inline-control span{font-size:13px;color:var(--text2)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-label{font-size:14px}
+.toggle-label small{display:block;color:var(--text2);font-size:12px;margin-top:2px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-btn{flex:1;padding:14px;background:none;border:none;color:var(--text2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.nav-btn .icon{font-size:20px}
+.nav-btn.active{color:var(--accent)}
+.nav-btn.kimi.active{color:var(--kimi)}
+.compare-item{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer}
+.compare-item.selected{border-color:var(--accent)}
+.native-input{background:var(--surface3);border:2px solid var(--kimi);border-radius:14px;padding:20px;font-size:16px;min-height:120px}
+.native-result{background:var(--surface);border:1px solid var(--kimi);border-radius:14px;padding:16px;margin:16px 0}
+.native-result .tag{background:var(--kimi);color:#fff;font-size:10px;padding:2px 8px;border-radius:6px;display:inline-block;margin-bottom:8px}
+.table-ref{width:100%;margin:12px 0;border-collapse:collapse;font-size:12px}
+.table-ref th{background:var(--surface2);padding:8px;text-align:left;border:1px solid var(--border);color:var(--text2)}
+.table-ref td{padding:8px;border:1px solid var(--border);color:var(--text3)}
+.table-ref .optimal{background:rgba(51,255,136,.1);color:var(--accent2);font-weight:600}
+.table-ref .danger{background:rgba(255,51,102,.1);color:var(--accent);font-weight:600}
+.tip-box{background:var(--surface2);border-left:3px solid var(--accent3);padding:12px;margin:12px 0;font-size:13px;color:var(--text2)}
+.tip-box k{color:var(--accent3);font-weight:700}
+.builder-help{font-size:12px;color:var(--text3);margin-bottom:12px}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.group-select{margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="header"><div><h1>Visual Lab PRO</h1><div class="badge">Kimi Native x MJ 8.1</div></div></div>
+
+<div class="bottom-nav">
+<button class="nav-btn active" data-tab="forge"><span class="icon">⚗️</span><span>Forge</span></button>
+<button class="nav-btn" data-tab="native"><span class="icon">🧠</span><span>Native</span></button>
+<button class="nav-btn" data-tab="builder"><span class="icon">🏗️</span><span>Builder</span></button>
+<button class="nav-btn" data-tab="vars"><span class="icon">🔀</span><span>Vars</span></button>
+<button class="nav-btn" data-tab="comp"><span class="icon">⚖️</span><span>Comp</span></button>
+<button class="nav-btn" data-tab="log"><span class="icon">📝</span><span>Log</span></button>
+</div>
+
+<!-- === FORGE === -->
+<div class="section active" id="forge">
+<span class="label">Base Prompt</span>
+<textarea id="basePrompt" placeholder="Paste your prompt here..."></textarea>
+<div class="toggle-row"><div class="toggle-label">Brutal Physique<small>Auto-inject hyper musculature hierarchy</small></div><input type="checkbox" id="brutalMode" checked></div>
+<div class="toggle-row"><div class="toggle-label">AR 9:20<small>Phone wallpaper format</small></div><input type="checkbox" id="arLock" checked></div>
+<div class="toggle-row"><div class="toggle-label">Kimi Native<small>Apply Kimi prompt engineering (priority #1 physique, &lt;40 tokens, no padding)</small></div><input type="checkbox" id="kimiMode" checked></div>
+<span class="label">Lock</span>
+<div class="chip-grid"><div class="chip locked">Physique</div><div class="chip locked">Light</div><div class="chip locked">Camera</div></div>
+<span class="label">Quick Preset</span>
+<div class="chip-grid"><div class="chip" onclick="preset('anya')">Anya Void</div><div class="chip" onclick="preset('tessa')">Tessa Storm</div><div class="chip" onclick="preset('duo')">Duo Close</div></div>
+<button class="btn btn-generate" onclick="goTo('vars')">Build Variations →</button>
+</div>
+
+<!-- === NATIVE === -->
+<div class="section" id="native">
+<span class="label">Write in your language. I translate.</span>
+<textarea class="native-input" id="nativeInput" placeholder="Tessa Thompson mojada brutal en desierto tactical... Squi, surprise me."></textarea>
+<button class="btn btn-kimi-generate" onclick="nativeTranslate()">Kimi Translate →</button>
+<div id="nativeResult"></div>
+
+<span class="label">Kimi Native Rules</span>
+<div class="tip-box">
+<k>Stylize Inverse:</k> Lower = more realism. <b>240-250</b> = hard cinema sweet spot. 400 = fantasy poster.<br>
+<k>Subject Competition:</k> 1 subject = max detail. 2 = optimal drama. 4+ = epic fantasy (less per body). Objects don't compete.<br>
+<k>Token Budget:</k> Keep active tokens &lt; 40. "Paja" kills realism. Short beats long.<br>
+<k>Physique Priority:</k> Must be in first 10 tokens or MJ drifts to fantasy.<br>
+<k>Light Specific:</k> "Hard 45° sun" beats "dramatic lighting" by miles.
+</div>
+
+<span class="label">Reference Tables</span>
+<table class="table-ref">
+<tr><th>Stylize</th><th>Realism</th><th>Detail</th><th>Use</th></tr>
+<tr><td>400</td><td class="danger">Low</td><td class="danger">Low</td><td>Fantasy epic</td></tr>
+<tr><td>280</td><td>Medium</td><td>Medium</td><td>Balance</td></tr>
+<tr><td class="optimal">250</td><td class="optimal">HIGH</td><td class="optimal">HIGH</td><td class="optimal">OPTIMO — Cinema sobrio</td></tr>
+<tr><td>240</td><td>Max</td><td>Max</td><td>Crudo, poros extremos</td></tr>
+<tr><td>200</td><td class="danger">Extreme</td><td class="danger">Extreme</td><td class="danger">Docu, riesgo fealdad</td></tr>
+</table>
+
+<table class="table-ref">
+<tr><th>Subjects</th><th>Detail per body</th><th>Use</th></tr>
+<tr><td class="optimal">1</td><td class="optimal">MAXIMO</td><td class="optimal">Fotoshoot puro, void</td></tr>
+<tr><td class="optimal">2</td><td class="optimal">OPTIMO</td><td class="optimal">Interaccion, drama</td></tr>
+<tr><td>4</td><td>Medium</td><td>Impacto epic, fantasy</td></tr>
+</table>
+</div>
+
+<!-- === BUILDER === -->
+<div class="section" id="builder">
+<span class="label">6-Section Constructor</span>
+<div class="builder-help">Each section builds a block. Kimi assembles with optimal hierarchy.</div>
+
+<!-- A: Subjects -->
+<div class="category" id="sec-A"><div class="category-title">A. Subjects <span class="toggle-btn" onclick="toggleCat('sec-A')">−</span></div><div class="cat-body">
+<div class="inline-control"><span>Qty:</span><select id="subjQty" onchange="updateSubjFields()"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+<div id="subj1-block">
+<div class="inline-control"><span>Actress 1:</span><select id="subj1Actress"><option>Anya Taylor-Joy</option><option>Tessa Thompson</option><option>Gal Gadot</option><option>Anne Hathaway</option><option>Natalie Dormer</option><option>Florence Pugh</option><option>Zendaya</option><option>Other</option></select></div>
+<div class="inline-control"><span>Character 1:</span><select id="subj1Char"><option>Original</option><option>Wonder Woman</option><option>Supergirl</option><option>Batgirl</option><option>Harley Quinn</option><option>Catwoman</option><option>Raven</option><option>Black Widow</option><option>Storm</option></select></div>
+</div>
+<div id="subj2-block" style="display:none">
+<div class="inline-control"><span>Actress 2:</span><select id="subj2Actress"><option>Tessa Thompson</option><option>Anya Taylor-Joy</option><option>Gal Gadot</option><option>Anne Hathaway</option><option>Natalie Dormer</option><option>Florence Pugh</option><option>Zendaya</option><option>Other</option></select></div>
+<div class="inline-control"><span>Character 2:</span><select id="subj2Char"><option>Original</option><option>Wonder Woman</option><option>Supergirl</option><option>Batgirl</option><option>Harley Quinn</option><option>Catwoman</option><option>Raven</option><option>Black Widow</option><option>Storm</option></select></div>
+</div>
+<div class="inline-control"><span>Physique:</span><select id="subjPhys"><option>Brutal defined</option><option>Athletic</option><option>Curves</option></select></div>
+<div class="inline-control"><span>Torso ratio:</span><select id="subjRatio"><option>70:30</option><option>65:35</option><option>75:25</option></select></div>
+<div class="inline-control"><span>Height:</span><select id="subjHeight"><option>6'2"</option><option>6'3"</option><option>6'4"</option></select></div>
+</div></div>
+
+<!-- B: Clothing -->
+<div class="category" id="sec-B"><div class="category-title">B. Vestimenta <span class="toggle-btn" onclick="toggleCat('sec-B')">−</span></div><div class="cat-body">
+<div class="inline-control"><span>Base:</span><select id="clothBase"><option>Tactical bikini</option><option>Sports bra + shorts</option><option>Body</option><option>Duster jacket</option></select></div>
+<div class="inline-control"><span>Color:</span><select id="clothColor"><option>Negro</option><option>Rojo</option><option>Azul</option><option>Blanco</option><option>Dorado</option><option>Indigo</option></select></div>
+<div class="inline-control"><span>Emblem:</span><select id="clothEmblem"><option>None</option><option>Aguila</option><option>S-shield</option><option>Bat</option><option>Diamond</option><option>Cat</option><option>Raven</option></select></div>
+<div class="inline-control"><span>Material:</span><select id="clothMat"><option>Latex</option><option>Malla</option><option>Neopreno</option><option>Cuero</option><option>Denim</option></select></div>
+<div class="inline-control"><span>State:</span><select id="clothState"><option>Sudado</option><option>Mojado</option><option>Polveriento</option><option>Intacto</option></select></div>
+</div></div>
+
+<!-- C: Interaction -->
+<div class="category" id="sec-C"><div class="category-title">C. Interaccion (2+ sujetos) <span class="toggle-btn" onclick="toggleCat('sec-C')">−</span></div><div class="cat-body">
+<div class="inline-control"><span>Posicion:</span><select id="intPos"><option>Solo</option><option>Espalda con espalda</option><option>Frente a frente</option><option>Lado a lado</option><option>Formacion</option></select></div>
+<div class="inline-control"><span>Contacto:</span><select id="intContact"><option>Sin contacto</option><option>Hombros tocando</option><option>Manos enlazadas</option><option>Armas cruzadas</option></select></div>
+<div class="inline-control"><span>Mirada:</span><select id="intGaze"><option>Camara</option><option>Entre ellas</option><option>Perfil</option><option>Cerrados</option></select></div>
+<div class="inline-control"><span>Expresion:</span><select id="intExpr"><option>Serenas</option><option>Agotadas</option><option>Competitivas</option><option>Maníacas</option><option>Depredadoras</option></select></div>
+</div></div>
+
+<!-- D: Background -->
+<div class="category" id="sec-D"><div class="category-title">D. Fondo + Atmosfera <span class="toggle-btn" onclick="toggleCat('sec-D')">−</span></div><div class="cat-body">
+<div class="inline-control"><span>Entorno:</span><select id="bgEnv"><option>Void</option><option>Desierto</option><option>Gimnasio</option><option>Ciudad noche</option><option>Tundra</option><option>Interior</option></select></div>
+<div class="inline-control"><span>Hora:</span><select id="bgTime"><option>Mediodia</option><option>Atardecer</option><option>Noche</option><option>Amanecer</option><option>Crepusculo</option></select></div>
+<div class="inline-control"><span>Clima:</span><select id="bgWeather"><option>Despejado</option><option>Lluvia</option><option>Niebla</option><option>Tormenta</option><option>Nieve</option></select></div>
+<div class="inline-control"><span>Luz:</span><select id="bgLight"><option>Hard 45</option><option>Cenital</option><option>Frontal</option><option>Trasera</option><option>Ninguna (void)</option></select></div>
+</div></div>
+
+<!-- E: Camera -->
+<div class="category" id="sec-E"><div class="category-title">E. Enfoque + Distancia <span class="toggle-btn" onclick="toggleCat('sec-E')">−</span></div><div class="cat-body">
+<div class="inline-control"><span>Distancia:</span><select id="camDist"><option>Macro torso</option><option>Medio cuerpo</option><option>Full body</option><option>Amplio con contexto</option></select></div>
+<div class="inline-control"><span>Lente:</span><select id="camLens"><option>100mm macro</option><option>85mm</option><option>50mm</option><option>35mm</option><option>24mm</option></select></div>
+<div class="inline-control"><span>Apertura:</span><select id="camAperture"><option>f/1.8</option><option>f/1.4</option><option>f/2.0</option><option>f/2.8</option><option>f/4</option><option>f/5.6</option></select></div>
+<div class="inline-control"><span>Angulo:</span><select id="camAngle"><option>Normal</option><option>Low angle</option><option>High angle</option><option>Dutch</option></select></div>
+<div class="inline-control"><span>Stylize:</span><select id="camStylize"><option value="240">240 — Crudo</option><option value="250" selected>250 — Optimo</option><option value="280">280 — Balance</option></select></div>
+</div></div>
+
+<!-- F: Artifacts -->
+<div class="category" id="sec-F"><div class="category-title">F. Artefactos <span class="toggle-btn" onclick="toggleCat('sec-F')">−</span></div><div class="cat-body">
+<div class="inline-control"><span>Character:</span><select id="artChar" onchange="updateArtifacts()"><option>None</option><option>Wonder Woman</option><option>Supergirl</option><option>Batgirl</option><option>Harley Quinn</option><option>Catwoman</option><option>Raven</option><option>Black Widow</option><option>Storm</option></select></div>
+<div class="chip-grid" id="artifactChips"></div>
+</div></div>
+
+<button class="btn btn-kimi-generate" onclick="buildFromBuilder()">Kimi Build Prompt →</button>
+<div id="builderResult"></div>
+</div>
+
+<!-- === VARS === -->
+<div class="section" id="vars">
+<span class="label">Test Variable</span>
+<div class="category"><div class="category-title">Actress</div><div class="chip-grid" id="actressChips"><div class="chip active">Anya Taylor-Joy</div><div class="chip">Tessa Thompson</div><div class="chip">Zendaya</div><div class="chip">Florence Pugh</div></div></div>
+<div class="category"><div class="category-title">Clothing</div><div class="chip-grid" id="clothingChips"><div class="chip">Tactical Bikini</div><div class="chip">Casual Wet</div><div class="chip">Superhero Suit</div><div class="chip">Duster Jacket</div></div></div>
+<div class="category"><div class="category-title">Setting</div><div class="chip-grid" id="settingChips"><div class="chip">Space Orbit</div><div class="chip">Desert Storm</div><div class="chip">Rain Street</div><div class="chip">Vintage Studio</div></div></div>
+<div class="category"><div class="category-title">Lighting</div><div class="chip-grid" id="lightingChips"><div class="chip">Golden Hour</div><div class="chip">Neon Cold</div><div class="chip">Side Light</div><div class="chip">Backlit</div></div></div>
+<div class="category"><div class="category-title">Chaos (Sweet: 15)</div><div class="chip-grid" id="chaosChips"><div class="chip">3</div><div class="chip">8</div><div class="chip active">15</div><div class="chip">25</div></div></div>
+<div class="category"><div class="category-title">Stylize</div><div class="chip-grid" id="stylizeChips"><div class="chip">60</div><div class="chip active">80</div><div class="chip">100</div><div class="chip">240</div><div class="chip">250</div><div class="chip">280</div></div></div>
+<div class="inline-control"><span>Vars:</span><input type="number" id="varCount" value="4" min="2" max="8"></div>
+<button class="btn btn-generate" onclick="generate()">Generate</button>
+<div id="results"></div>
+</div>
+
+<!-- === COMP === -->
+<div class="section" id="comp">
+<span class="label">Select 2-4</span>
+<div id="compareList"></div>
+<button class="btn btn-generate" onclick="runCompare()" id="compareBtn" style="display:none">Compare</button>
+<div id="compareResult"></div>
+</div>
+
+<!-- === LOG === -->
+<div class="section" id="log">
+<span class="label">History</span>
+<div id="logList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+var PRESETS = {
+  actress: {
+    'Anya Taylor-Joy': 'Anya Taylor-Joy, intense pale gaze',
+    'Tessa Thompson': 'Tessa Thompson, warm regal complexion',
+    'Zendaya': 'Zendaya, elegant sharp silhouette',
+    'Florence Pugh': 'Florence Pugh, strong grounded presence',
+    'Gal Gadot': 'Gal Gadot, classical mediterranean features',
+    'Anne Hathaway': 'Anne Hathaway, expressive wide eyes',
+    'Natalie Dormer': 'Natalie Dormer, asymmetric confident smirk'
+  },
+  clothing: {
+    'Tactical Bikini': 'tactical bikini armor, cross-back straps, utility pouches',
+    'Casual Wet': 'casual wet clothing soaked, low-waist, fabric clinging to form',
+    'Superhero Suit': 'form-fitting superhero suit, metallic weave texture',
+    'Duster Jacket': 'long leather duster jacket, weathered, flowing in wind'
+  },
+  setting: {
+    'Space Orbit': 'floating in low Earth orbit, planet curvature visible, stars infinite',
+    'Desert Storm': 'dust storm, golden particles suspended, harsh sunlight, heat haze',
+    'Rain Street': 'rain-soaked city street, neon reflections on wet asphalt',
+    'Vintage Studio': 'vintage recording studio, analog equipment, warm wood panels'
+  },
+  lighting: {
+    'Golden Hour': 'warm golden hour light, long shadows, amber skin tones',
+    'Neon Cold': 'cold neon light, cyan and magenta rim, high contrast, night',
+    'Side Light': 'dramatic side lighting, split face shadow, cinematic noir',
+    'Backlit': 'strong backlight, silhouette edges glowing, volumetric haze'
+  }
+};
+
+var ARTIFACTS = {
+  'Wonder Woman': ['Lazo dorado', 'Espada', 'Escudo', 'Tiara', 'Brazaletes'],
+  'Supergirl': ['Capa roja', 'S-shield objeto', 'Rayo calor'],
+  'Batgirl': ['Batarangs', 'Bat-látigo', 'Capa', 'Gadget cinturon'],
+  'Harley Quinn': ['Bate "GOOD NIGHT"', 'Martillo', 'Pistola pop', 'Granadas'],
+  'Catwoman': ['Látigo', 'Garras', 'Goggles', 'Diamante'],
+  'Raven': ['Capa oscura', 'Energía violeta', 'Libro Azarath'],
+  'Black Widow': ['Batons eléctricos', 'Pistolas', 'Viuda mordida'],
+  'Storm': ['Capa blanca', 'Rayos', 'Viento', 'Ojo blanco glow']
+};
+
+var BRUTAL = 'hyper-exaggerated visible musculature, defined rectus abdominis with deep separations, serratus anterior fingers, oblique ridges, vascular lower abdomens, real skin grain texture, pores visible, sweat beads on collarbones';
+var BRUTAL_LITE = 'defined abs, athletic build, real skin texture';
+
+var exps = JSON.parse(localStorage.getItem('vlpro') || '[]');
+var sel = [];
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  var navBtns = document.querySelectorAll('.nav-btn');
+  for (var i = 0; i < navBtns.length; i++) {
+    navBtns[i].addEventListener('click', function() {
+      switchTab(this.dataset.tab);
+    });
+  }
+
+  var chipGrids = document.querySelectorAll('#actressChips, #clothingChips, #settingChips, #lightingChips, #chaosChips, #stylizeChips');
+  for (var g = 0; g < chipGrids.length; g++) {
+    var chips = chipGrids[g].querySelectorAll('.chip');
+    for (var c = 0; c < chips.length; c++) {
+      chips[c].addEventListener('click', function() {
+        var parent = this.parentElement;
+        var siblings = parent.querySelectorAll('.chip');
+        for (var s = 0; s < siblings.length; s++) {
+          siblings[s].classList.remove('active');
+        }
+        this.classList.add('active');
+      });
+    }
+  }
+
+  var lockChips = document.querySelectorAll('.chip.locked');
+  for (var l = 0; l < lockChips.length; l++) {
+    lockChips[l].addEventListener('click', function() {
+      this.classList.toggle('locked');
+    });
+  }
+
+  document.getElementById('subjQty').addEventListener('change', updateSubjFields);
+  updateSubjFields();
+  updateArtifacts();
+  showToast('Visual Lab PRO ready');
+});
+
+// ============================================================
+// NAV
+// ============================================================
+function switchTab(tab) {
+  var sections = document.querySelectorAll('.section');
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].classList.remove('active');
+  }
+  var navs = document.querySelectorAll('.nav-btn');
+  for (var i = 0; i < navs.length; i++) {
+    navs[i].classList.remove('active');
+  }
+  document.getElementById(tab).classList.add('active');
+  document.querySelector('.nav-btn[data-tab="' + tab + '"]').classList.add('active');
+
+  if (tab === 'log') renderLog();
+  if (tab === 'comp') renderCompare();
+}
+
+function goTo(tab) {
+  var val = document.getElementById('basePrompt').value.trim();
+  if (!val) {
+    showToast('Paste prompt first');
+    return;
+  }
+  switchTab(tab);
+}
+
+function toggleCat(id) {
+  var cat = document.getElementById(id);
+  cat.classList.toggle('collapsed');
+  var btn = cat.querySelector('.toggle-btn');
+  btn.textContent = cat.classList.contains('collapsed') ? '+' : '−';
+}
+
+function updateSubjFields() {
+  var qty = parseInt(document.getElementById('subjQty').value);
+  var block2 = document.getElementById('subj2-block');
+  if (block2) block2.style.display = qty >= 2 ? 'block' : 'none';
+}
+
+function updateArtifacts() {
+  var char = document.getElementById('artChar').value;
+  var box = document.getElementById('artifactChips');
+  box.innerHTML = '';
+  if (!char || char === 'None' || !ARTIFACTS[char]) return;
+  var arts = ARTIFACTS[char];
+  for (var i = 0; i < arts.length; i++) {
+    var d = document.createElement('div');
+    d.className = 'chip';
+    d.textContent = arts[i];
+    d.onclick = function() { this.classList.toggle('active'); };
+    box.appendChild(d);
+  }
+}
+
+function preset(name) {
+  var ta = document.getElementById('basePrompt');
+  if (name === 'anya') {
+    ta.value = 'Cinematic full-body portrait of Anya Taylor-Joy, 6\'2" extreme torso elongation 70:30, tactical bikini with eagle emblem, low-waist exposing brutal 8-pack, standing in void — pure black, single brutal studio light from 45°';
+  } else if (name === 'tessa') {
+    ta.value = 'Cinematic full-body portrait of Tessa Thompson as Storm, 6\'3" extreme torso elongation, white cape billowing, low-waist tactical bikini, desert storm, dust particles, harsh sun from 90°';
+  } else if (name === 'duo') {
+    ta.value = 'Cinematic full-body of Anya Taylor-Joy and Tessa Thompson standing back to back, both 6\'2" brutal physique, tactical outfits, void black background, hard 45° side light creating razor shadows';
+  }
+  showToast('Preset loaded');
+}
+
+// ============================================================
+// NATIVE TRANSLATOR (Kimi Native)
+// ============================================================
+function nativeTranslate() {
+  var input = document.getElementById('nativeInput').value.trim();
+  if (!input) {
+    showToast('Write something');
+    return;
+  }
+  var result = kimify(input);
+  var box = document.getElementById('nativeResult');
+  box.innerHTML = '';
+  var card = document.createElement('div');
+  card.className = 'native-result';
+  var tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.textContent = 'Kimi Native Output';
+  var promptDiv = document.createElement('div');
+  promptDiv.className = 'prompt-text';
+  promptDiv.textContent = result.prompt;
+  var metaDiv = document.createElement('div');
+  metaDiv.className = 'meta';
+  metaDiv.style.marginTop = '8px';
+  metaDiv.textContent = 'Tokens: ~' + result.tokens + ' | Physique priority: ' + (result.physiqueFirst ? 'YES' : 'NO');
+  var actions = document.createElement('div');
+  actions.className = 'actions';
+  var copyBtn = document.createElement('button');
+  copyBtn.className = 'btn btn-kimi';
+  copyBtn.textContent = 'Copy';
+  copyBtn.onclick = function() { copyText(result.prompt); };
+  var winBtn = document.createElement('button');
+  winBtn.className = 'btn btn-win';
+  winBtn.textContent = '✅';
+  winBtn.onclick = function() { logNative(result.prompt, 'win'); };
+  var failBtn = document.createElement('button');
+  failBtn.className = 'btn btn-fail';
+  failBtn.textContent = '❌';
+  failBtn.onclick = function() { logNative(result.prompt, 'fail'); };
+  actions.appendChild(copyBtn);
+  actions.appendChild(winBtn);
+  actions.appendChild(failBtn);
+  card.appendChild(tag);
+  card.appendChild(promptDiv);
+  card.appendChild(metaDiv);
+  card.appendChild(actions);
+  box.appendChild(card);
+}
+
+function kimify(text) {
+  var lower = text.toLowerCase();
+  var words = text.split(/\s+/);
+
+  // Detect actress
+  var actress = null;
+  if (lower.indexOf('anya') !== -1) actress = 'Anya Taylor-Joy';
+  else if (lower.indexOf('tessa') !== -1) actress = 'Tessa Thompson';
+  else if (lower.indexOf('zendaya') !== -1) actress = 'Zendaya';
+  else if (lower.indexOf('florence') !== -1) actress = 'Florence Pugh';
+  else if (lower.indexOf('gal') !== -1) actress = 'Gal Gadot';
+  else if (lower.indexOf('anne') !== -1) actress = 'Anne Hathaway';
+  else if (lower.indexOf('natalie') !== -1) actress = 'Natalie Dormer';
+
+  // Detect physique intensity
+  var brutal = lower.indexOf('brutal') !== -1 || lower.indexOf('extrem') !== -1 || lower.indexOf('hiper') !== -1;
+  var athletic = lower.indexOf('atl') !== -1 || lower.indexOf('fit') !== -1;
+
+  // Detect setting
+  var setting = '';
+  if (lower.indexOf('desierto') !== -1 || lower.indexOf('desert') !== -1) setting = 'dust storm, golden particles, harsh sunlight, heat haze';
+  else if (lower.indexOf('void') !== -1) setting = 'void — pure black, no objects, no floor, single brutal studio light';
+  else if (lower.indexOf('lluvia') !== -1 || lower.indexOf('rain') !== -1) setting = 'rain-soaked street, water droplets on skin, neon reflections';
+  else if (lower.indexOf('espacio') !== -1 || lower.indexOf('space') !== -1) setting = 'low Earth orbit, planet curvature, stars infinite, zero gravity floating';
+  else if (lower.indexOf('gimnasio') !== -1 || lower.indexOf('gym') !== -1) setting = 'industrial gym, iron weights, chalk dust, fluorescent overhead';
+  else setting = 'void — pure black, no objects, no floor, single brutal studio light';
+
+  // Detect clothing
+  var clothing = '';
+  if (lower.indexOf('tactical') !== -1 || lower.indexOf('tactica') !== -1) clothing = 'tactical bikini armor, cross-back straps';
+  else if (lower.indexOf('bikini') !== -1) clothing = 'tactical bikini';
+  else if (lower.indexOf('mojada') !== -1 || lower.indexOf('wet') !== -1 || lower.indexOf('soaked') !== -1) clothing = 'casual wet clothing, soaked fabric clinging, low-waist';
+  else if (lower.indexOf('duster') !== -1) clothing = 'long leather duster jacket';
+  else clothing = 'minimal tactical gear';
+
+  // Detect light
+  var light = '';
+  if (lower.indexOf('45') !== -1) light = 'hard 45° light creating razor shadows across abs';
+  else if (lower.indexOf('side') !== -1 || lower.indexOf('lateral') !== -1) light = 'dramatic side lighting, split face shadow';
+  else if (lower.indexOf('back') !== -1 || lower.indexOf('trasera') !== -1) light = 'strong backlight, silhouette edges glowing';
+  else light = 'hard 45° light creating razor shadows across abs';
+
+  // Build prompt with Kimi Native hierarchy
+  var parts = [];
+
+  // Priority #1: Subject + physique (MUST be first)
+  if (actress) {
+    parts.push('Cinematic full-body portrait of ' + actress + ', 6\'2" extreme torso elongation 70:30');
+  } else {
+    parts.push('Cinematic full-body portrait, 6\'2" extreme torso elongation 70:30');
+  }
+
+  // Physique
+  if (brutal) {
+    parts.push('low-waist exposing full brutal 8-pack rectus abdominis with deep separations, serratus anterior fingers, oblique ridges, vascular lower abdomens, pores visible, sweat beads, skin texture max, no smoothing');
+  } else if (athletic) {
+    parts.push('low-waist exposing defined rectus abdominis, serratus visible, athletic build, real skin texture');
+  } else {
+    parts.push('low-waist, defined midsection, real skin grain');
+  }
+
+  // Clothing
+  parts.push(clothing);
+
+  // Setting
+  parts.push(setting);
+
+  // Light
+  parts.push(light + ', no fill light');
+
+  // Camera
+  parts.push('Shot on ARRI Alexa 65 with Cooke S7i 50mm, f/2.8, photorealistic, desaturated');
+
+  // Params
+  var prompt = parts.join(', ') + ' --ar 9:20 --style raw --stylize 250 --c 15 --v 8.1';
+
+  var tokenCount = prompt.split(/\s+/).length;
+
+  return {
+    prompt: prompt,
+    tokens: tokenCount,
+    physiqueFirst: true
+  };
+}
+
+// ============================================================
+// BUILDER
+// ============================================================
+function buildFromBuilder() {
+  var parts = [];
+  var meta = [];
+
+  var qty = parseInt(document.getElementById('subjQty').value);
+  var phys = document.getElementById('subjPhys').value;
+  var ratio = document.getElementById('subjRatio').value;
+  var height = document.getElementById('subjHeight').value;
+
+  var names = [];
+  var subj1Name = document.getElementById('subj1Actress').value;
+  var subj1Char = document.getElementById('subj1Char').value;
+  if (subj1Char !== 'Original') subj1Name += ' as ' + subj1Char;
+  names.push(subj1Name);
+
+  if (qty >= 2) {
+    var subj2Name = document.getElementById('subj2Actress').value;
+    var subj2Char = document.getElementById('subj2Char').value;
+    if (subj2Char !== 'Original') subj2Name += ' as ' + subj2Char;
+    names.push(subj2Name);
+  }
+
+  var nameStr;
+  if (qty === 1) {
+    nameStr = names[0];
+  } else if (qty === 2) {
+    nameStr = names[0] + ' and ' + names[1];
+  } else {
+    nameStr = names[0] + ' leading a group of ' + qty;
+  }
+
+  parts.push('Cinematic full-body portrait of ' + nameStr + ', ' + height + ' extreme torso elongation ' + ratio);
+
+  if (phys === 'Brutal defined') {
+    parts.push('low-waist exposing full brutal 8-pack rectus abdominis with deep separations, serratus anterior fingers, oblique ridges, vascular lower abdomens, pores visible, sweat beads, skin texture max, no smoothing');
+  } else if (phys === 'Athletic') {
+    parts.push('low-waist exposing defined rectus abdominis, serratus visible, athletic build, real skin texture');
+  } else {
+    parts.push('low-waist, defined midsection, real skin grain');
+  }
+
+  meta.push(nameStr + ' | ' + phys);
+
+  var base = document.getElementById('clothBase').value;
+  var color = document.getElementById('clothColor').value;
+  var emblem = document.getElementById('clothEmblem').value;
+  var mat = document.getElementById('clothMat').value;
+  var state = document.getElementById('clothState').value;
+
+  var clothDesc = color + ' ' + state + ' ' + mat + ' ' + base;
+  if (emblem !== 'None') clothDesc += ' with ' + emblem + ' emblem';
+  parts.push(clothDesc);
+  meta.push(base + ' | ' + color);
+
+  var pos = document.getElementById('intPos').value;
+  var contact = document.getElementById('intContact').value;
+  var gaze = document.getElementById('intGaze').value;
+  var expr = document.getElementById('intExpr').value;
+
+  if (qty >= 2 && pos !== 'Solo') {
+    parts.push('standing ' + pos.toLowerCase() + ', ' + contact.toLowerCase() + ', ' + gaze.toLowerCase() + ' gaze, ' + expr.toLowerCase() + ' expression');
+    meta.push(pos + ' | ' + expr);
+  }
+
+  var env = document.getElementById('bgEnv').value;
+  var time = document.getElementById('bgTime').value;
+  var weather = document.getElementById('bgWeather').value;
+  var light = document.getElementById('bgLight').value;
+
+  parts.push(time.toLowerCase() + ' ' + weather.toLowerCase() + ' ' + env.toLowerCase() + ', ' + light.toLowerCase() + ' light creating razor shadows, no fill');
+  meta.push(env + ' | ' + light);
+
+  var dist = document.getElementById('camDist').value;
+  var lens = document.getElementById('camLens').value;
+  var ap = document.getElementById('camAperture').value;
+  var ang = document.getElementById('camAngle').value;
+  var st = document.getElementById('camStylize').value;
+
+  parts.push('Shot on ARRI Alexa 65 with Cooke S7i ' + lens + ', ' + ap + ', ' + dist.toLowerCase() + ', ' + ang.toLowerCase() + ' angle, photorealistic');
+  meta.push('s' + st);
+
+  var aChips = document.querySelectorAll('#artifactChips .chip.active');
+  var artifacts = [];
+  for (var i = 0; i < aChips.length; i++) {
+    artifacts.push(aChips[i].textContent);
+  }
+  if (artifacts.length > 0) {
+    parts.push('holding ' + artifacts.join(', '));
+  }
+
+  var prompt = parts.join(', ') + ' --ar 9:20 --style raw --stylize ' + st + ' --c 15 --v 8.1';
+  var tokenCount = prompt.split(/\s+/).length;
+
+  var box = document.getElementById('builderResult');
+  box.innerHTML = '';
+
+  var card = document.createElement('div');
+  card.className = 'prompt-card';
+
+  var metaDiv = document.createElement('div');
+  metaDiv.className = 'meta';
+  var metaSpan1 = document.createElement('span');
+  metaSpan1.textContent = 'Builder Output';
+  var metaSpan2 = document.createElement('span');
+  metaSpan2.textContent = '~' + tokenCount + ' tokens';
+  metaDiv.appendChild(metaSpan1);
+  metaDiv.appendChild(metaSpan2);
+
+  var promptDiv = document.createElement('div');
+  promptDiv.className = 'prompt-text';
+  promptDiv.textContent = prompt;
+
+  var actions = document.createElement('div');
+  actions.className = 'actions';
+
+  var copyBtn = document.createElement('button');
+  copyBtn.className = 'btn btn-copy';
+  copyBtn.textContent = 'Copy';
+  copyBtn.onclick = function() { copyText(prompt); };
+
+  var winBtn = document.createElement('button');
+  winBtn.className = 'btn btn-win';
+  winBtn.textContent = '✅';
+  winBtn.onclick = function() { logNative(prompt, 'win'); };
+
+  var failBtn = document.createElement('button');
+  failBtn.className = 'btn btn-fail';
+  failBtn.textContent = '❌';
+  failBtn.onclick = function() { logNative(prompt, 'fail'); };
+
+  actions.appendChild(copyBtn);
+  actions.appendChild(winBtn);
+  actions.appendChild(failBtn);
+
+  card.appendChild(metaDiv);
+  card.appendChild(promptDiv);
+  card.appendChild(actions);
+  box.appendChild(card);
+}
+
+// ============================================================
+// GENERATE (Vars)
+// ============================================================
+function getActive(id) {
+  var grid = document.getElementById(id);
+  if (!grid) return null;
+  var active = grid.querySelector('.chip.active');
+  return active ? active.textContent : null;
+}
+
+function generate() {
+  var base = document.getElementById('basePrompt').value.trim();
+  if (!base) {
+    showToast('No prompt');
+    return;
+  }
+
+  var brutal = document.getElementById('brutalMode').checked;
+  var arL = document.getElementById('arLock').checked;
+  var kimi = document.getElementById('kimiMode').checked;
+  var n = parseInt(document.getElementById('varCount').value) || 4;
+
+  var a = getActive('actressChips');
+  var cl = getActive('clothingChips');
+  var s = getActive('settingChips');
+  var l = getActive('lightingChips');
+  var c = getActive('chaosChips') || '15';
+  var st = getActive('stylizeChips') || '80';
+
+  var results = [];
+
+  for (var i = 0; i < n; i++) {
+    var p = base;
+
+    if (brutal && p.indexOf('musculature') === -1 && p.indexOf('abs') === -1) {
+      p += ', ' + BRUTAL;
+    }
+
+    var changed = [];
+
+    if (a && PRESETS.actress[a]) {
+      p += ', ' + PRESETS.actress[a];
+      changed.push(a);
+    }
+    if (cl && PRESETS.clothing[cl]) {
+      p += ', ' + PRESETS.clothing[cl];
+      changed.push(cl);
+    }
+    if (s && PRESETS.setting[s]) {
+      p += ', ' + PRESETS.setting[s];
+      changed.push(s);
+    }
+    if (l && PRESETS.lighting[l]) {
+      p += ', ' + PRESETS.lighting[l];
+      changed.push(l);
+    }
+
+    if (kimi) {
+      p = optimizeKimi(p);
+    }
+
+    var ar = arL ? ' --ar 9:20' : '';
+    p += ' --style raw --s ' + st + ' --c ' + c + ar + ' --v 8.1';
+
+    results.push({
+      id: Date.now() + i,
+      prompt: p,
+      changed: changed.join(', ') || 'Base+Params',
+      chaos: c,
+      stylize: st,
+      time: new Date().toISOString()
+    });
+  }
+
+  renderResults(results);
+}
+
+function optimizeKimi(prompt) {
+  // Ensure physique is in first half of prompt
+  var physiqueWords = ['abs', 'musculature', 'torso', 'rectus', 'serratus', 'oblique', 'vascular'];
+  var hasPhysique = false;
+  for (var i = 0; i < physiqueWords.length; i++) {
+    if (prompt.indexOf(physiqueWords[i]) !== -1) { hasPhysique = true; break; }
+  }
+  if (!hasPhysique) {
+    prompt = 'Cinematic full-body portrait with hyper-defined visible musculature, ' + prompt;
+  }
+  // Remove duplicate commas
+  prompt = prompt.replace(/,\s*,/g, ',').replace(/,\s*$/g, '');
+  return prompt;
+}
+
+function renderResults(results) {
+  var box = document.getElementById('results');
+  box.innerHTML = '<span class="label">Prompts</span>';
+
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    var card = document.createElement('div');
+    card.className = 'prompt-card';
+
+    var changedHtml = '<span style="color:var(--warn);font-weight:700">' + esc(r.changed) + '</span>';
+
+    card.innerHTML =
+      '<div class="meta"><span>Var ' + (i + 1) + '</span>' + changedHtml + '</div>' +
+      '<div class="prompt-text" id="prompt-' + r.id + '">' + esc(r.prompt) + '</div>' +
+      '<div class="actions">' +
+      '<button class="btn btn-copy" onclick="copyPrompt(' + r.id + ')">Copy</button>' +
+      '<button class="btn btn-win" onclick="logResult(' + r.id + ', \'win\')">✅</button>' +
+      '<button class="btn btn-fail" onclick="logResult(' + r.id + ', \'fail\')">❌</button>' +
+      '</div>';
+
+    box.appendChild(card);
+  }
+
+  for (var j = 0; j < results.length; j++) {
+    exps.unshift(results[j]);
+  }
+  save();
+  showToast(results.length + ' ready');
+}
+
+function esc(t) {
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function copyPrompt(id) {
+  var exp = exps.find(function(e) { return e.id === id; });
+  if (!exp) return;
+  copyText(exp.prompt);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('Copied');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied');
+  });
+}
+
+function logResult(id, status) {
+  var exp = exps.find(function(e) { return e.id === id; });
+  if (exp) {
+    exp.status = status;
+    exp.loggedAt = new Date().toISOString();
+    save();
+    showToast(status === 'win' ? 'Wujuuuu!' : 'Baneado');
+  }
+}
+
+function save() {
+  localStorage.setItem('vlpro', JSON.stringify(exps.slice(0, 200)));
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() {
+    t.classList.remove('show');
+  }, 2000);
+}
+
+// ============================================================
+// LOG
+// ============================================================
+function renderLog() {
+  var box = document.getElementById('logList');
+  if (!exps.length) {
+    box.innerHTML = '<div class="empty"><div class="icon">📝</div>No experiments yet</div>';
+    return;
+  }
+
+  box.innerHTML = '';
+  var slice = exps.slice(0, 50);
+
+  for (var i = 0; i < slice.length; i++) {
+    var e = slice[i];
+    var d = document.createElement('div');
+    d.className = 'log-item';
+    var st = e.status || 'untested';
+    var dotClass = st === 'win' ? 'win' : st === 'fail' ? 'fail' : '';
+    var dateStr = new Date(e.time).toLocaleDateString();
+    var isKimi = e.changed === 'Kimi Native';
+
+    d.innerHTML =
+      '<div class="status-dot ' + dotClass + '"></div>' +
+      '<div class="info"><div class="title">' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</div>' +
+      '<div class="date">' + dateStr + ' · c' + e.chaos + ' s' + e.stylize + '</div></div>' +
+      '<div style="display:flex;gap:6px">' +
+      '<button class="btn" style="padding:6px 12px;font-size:12px" onclick="copyText(\'' + esc((e.prompt || '').replace(/'/g, '\\\'')) + '\')">Copy</button>' +
+      (e.status ? '' : '<button class="btn" style="padding:6px 12px;font-size:12px" onclick="logResult(' + e.id + ', \'win\')">✅</button><button class="btn" style="padding:6px 12px;font-size:12px" onclick="logResult(' + e.id + ', \'fail\')">❌</button>') +
+      '</div>';
+
+    box.appendChild(d);
+  }
+}
+
+// ============================================================
+// COMPARE
+// ============================================================
+function renderCompare() {
+  var box = document.getElementById('compareList');
+  sel = [];
+  document.getElementById('compareBtn').style.display = 'none';
+  document.getElementById('compareResult').innerHTML = '';
+
+  if (!exps.length) {
+    box.innerHTML = '<div class="empty"><div class="icon">⚖️</div>Nothing to compare</div>';
+    return;
+  }
+
+  box.innerHTML = '<span class="label" style="margin-top:0">Tap to select (2-4)</span>';
+  var slice = exps.slice(0, 20);
+
+  for (var i = 0; i < slice.length; i++) {
+    var e = slice[i];
+    var d = document.createElement('div');
+    d.className = 'compare-item';
+    d.dataset.id = e.id;
+    var isKimi = e.changed === 'Kimi Native';
+    d.innerHTML =
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</div>' +
+      '<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc((e.prompt || '').substring(0, 60)) + '...</div>';
+
+    d.addEventListener('click', function() {
+      var id = parseInt(this.dataset.id);
+      this.classList.toggle('selected');
+      if (this.classList.contains('selected')) {
+        sel.push(id);
+      } else {
+        sel = sel.filter(function(x) { return x !== id; });
+      }
+      document.getElementById('compareBtn').style.display = sel.length >= 2 ? 'flex' : 'none';
+    });
+
+    box.appendChild(d);
+  }
+}
+
+function runCompare() {
+  var selected = exps.filter(function(e) { return sel.indexOf(e.id) !== -1; });
+  var box = document.getElementById('compareResult');
+  box.innerHTML = '<span class="label">Side by Side</span>';
+
+  for (var i = 0; i < selected.length; i++) {
+    var e = selected[i];
+    var d = document.createElement('div');
+    d.className = 'prompt-card';
+    var isKimi = e.changed === 'Kimi Native';
+    d.innerHTML =
+      '<div class="meta"><span>' + esc(e.changed || 'Base') + (isKimi ? ' <span style="color:var(--kimi)">[K]</span>' : '') + '</span><span>c' + e.chaos + ' s' + e.stylize + '</span></div>' +
+      '<div class="prompt-text">' + esc(e.prompt || '') + '</div>' +
+      '<button class="btn btn-copy" style="margin-top:10px" onclick="copyText(\'' + esc((e.prompt || '').replace(/'/g, '\\\'')) + '\')">Copy This</button>';
+    box.appendChild(d);
+  }
+}
+</script>
+</body>
+</html>

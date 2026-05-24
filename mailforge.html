@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MailForge — Corporativo Directo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#000;--surface:#0a0a0a;--surface2:#141414;--surface3:#1a1a1a;--border:#222;--text:#e8e8e8;--text2:#888;--text3:#555;--accent:#ff3366;--accent2:#33ff88;--accent3:#3388ff;--warn:#ffaa33;--info:#cc77ff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding:16px;padding-bottom:20px}
+.header{padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.header h1{font-size:20px;font-weight:700;letter-spacing:0.5px}
+.header .badge{font-size:10px;color:var(--info);text-transform:uppercase;letter-spacing:1px;border:1px solid var(--info);padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block}
+.label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin:20px 0 10px}
+.label small{color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px}
+.chip-grid{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.chip{padding:16px 20px;background:var(--surface2);border:2px solid var(--border);border-radius:16px;font-size:15px;cursor:pointer;user-select:none;color:var(--text2);min-width:100px;text-align:center;font-weight:500}
+.chip.active{background:var(--accent3);border-color:var(--accent3);color:#fff;font-weight:700}
+.chip.warn.active{background:var(--warn);border-color:var(--warn);color:#000}
+.chip.danger.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.success.active{background:var(--accent2);border-color:var(--accent2);color:#000}
+.input-big{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:16px;padding:18px;color:var(--text);font-size:18px;font-family:inherit;outline:none;min-height:60px}
+.input-big::placeholder{color:var(--text3);font-size:16px}
+textarea.input-big{min-height:100px;font-size:16px}
+.result-box{background:var(--surface);border:2px solid var(--accent3);border-radius:16px;padding:20px;margin:20px 0}
+.result-box .meta{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;justify-content:space-between}
+.subject-line{font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--border);word-break:break-word}
+.body-text{font-size:16px;line-height:1.8;color:var(--text2);white-space:pre-wrap;word-break:break-word}
+.body-text strong{color:var(--text);font-weight:600}
+.btn{width:100%;padding:20px;border:none;border-radius:16px;font-size:18px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;margin:10px 0}
+.btn-generate{background:var(--accent3);color:#fff}
+.btn-copy{background:var(--accent2);color:#000}
+.btn-row{display:flex;gap:10px;margin:10px 0}
+.btn-row .btn{margin:0;flex:1}
+.saved-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin:10px 0;cursor:pointer}
+.saved-item .title{font-size:15px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saved-item .date{font-size:11px;color:var(--text2)}
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:14px 28px;border-radius:14px;font-size:15px;font-weight:700;z-index:200;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
+</style>
+</head>
+<body>
+<div class="header"><h1>MailForge</h1><div class="badge">Corporativo Directo</div></div>
+
+<span class="label">Tipo de comunicación</span>
+<div class="chip-grid" id="typeChips">
+<div class="chip active" data-val="solicitud">Solicitud</div>
+<div class="chip" data-val="seguimiento">Seguimiento</div>
+<div class="chip" data-val="recordatorio">Recordatorio</div>
+<div class="chip" data-val="rechazo">Rechazo</div>
+<div class="chip" data-val="aceptacion">Aceptación</div>
+<div class="chip" data-val="escalacion">Escalación</div>
+</div>
+
+<span class="label">Tono</span>
+<div class="chip-grid" id="toneChips">
+<div class="chip active" data-val="formal">Formal</div>
+<div class="chip warn" data-val="directo">Directo</div>
+<div class="chip danger" data-val="urgente">Urgente</div>
+</div>
+
+<span class="label">Destinatario</span>
+<div class="chip-grid" id="audienceChips">
+<div class="chip active" data-val="jefe">Jefe directo</div>
+<div class="chip" data-val="cliente">Cliente</div>
+<div class="chip" data-val="proveedor">Proveedor</div>
+<div class="chip" data-val="equipo">Equipo interno</div>
+<div class="chip" data-val="directorio">Directorio / C-level</div>
+</div>
+
+<span class="label">Asunto breve <small>(opcional, ej: "Aprobación presupuesto Q3")</small></span>
+<input type="text" class="input-big" id="asuntoInput" placeholder="Toca y escribe...">
+
+<span class="label">Detalle clave <small>(opcional, ej: "Necesito respuesta antes del viernes")</small></span>
+<textarea class="input-big" id="detalleInput" placeholder="Toca y escribe..."></textarea>
+
+<button class="btn btn-generate" onclick="generateEmail()">Generar Email</button>
+
+<div id="resultArea"></div>
+
+<span class="label">Guardados recientes</span>
+<div id="savedArea"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var TEMPLATES = {
+  solicitud: {
+    formal: {
+      jefe: { open: 'Solicito su revisión y aprobación respecto a', close: 'Agradezco su respuesta para continuar con los siguientes pasos.' },
+      cliente: { open: 'Nos ponemos en contacto para solicitar', close: 'Quedamos atentos a su confirmación para proceder.' },
+      proveedor: { open: 'Solicitamos cotización formal para', close: 'Agradecemos su pronta respuesta con la información requerida.' },
+      equipo: { open: 'Necesito el apoyo del equipo con', close: 'Confirmen disponibilidad y alcance estimado.' },
+      directorio: { open: 'Solicitamos la aprobación del directorio para', close: 'Requerimos su decisión para mantener los tiempos establecidos.' }
+    },
+    directo: {
+      jefe: { open: 'Necesito decisión sobre', close: 'Responda sí o no. Plazo: 48 horas.' },
+      cliente: { open: 'Le pedimos', close: 'Sin su respuesta no podemos avanzar.' },
+      proveedor: { open: 'Envíenos precios y plazo para', close: 'Si no hay respuesta en 72h, buscaremos alternativa.' },
+      equipo: { open: 'Necesito esto hecho:', close: '¿Quién lo toma? Confirmen hoy.' },
+      directorio: { open: 'Necesitamos su voto sobre', close: 'La demora nos cuesta. Decisión esta semana.' }
+    },
+    urgente: {
+      jefe: { open: 'URGENTE: Requiero aprobación inmediata de', close: 'Cada hora de espera retrasa el proyecto. Responda hoy.' },
+      cliente: { open: 'URGENTE: Sin su confirmación de', close: 'el proyecto se detiene. Necesitamos su respuesta en 24 horas.' },
+      proveedor: { open: 'URGENTE: Necesito cotización hoy para', close: 'La entrega está comprometida. Responda de inmediato.' },
+      equipo: { open: 'URGENTE: Bloqueo activo. Necesito', close: '¿Quién puede resolverlo hoy? Escalaré si no hay respuesta en 2 horas.' },
+      directorio: { open: 'URGENTE: La operación está parada por falta de decisión sobre', close: 'Requerimos su resolución en la próxima 24 horas o activamos plan B.' }
+    }
+  },
+  seguimiento: {
+    formal: {
+      jefe: { open: 'Le informo el estado actual de', close: 'Adjunto el reporte detallado para su revisión.' },
+      cliente: { open: 'Le compartimos el avance de', close: 'Estamos a disposición para cualquier consulta adicional.' },
+      proveedor: { open: 'Solicitamos actualización del estado de', close: 'Necesitamos fecha de entrega confirmada.' },
+      equipo: { open: 'Actualización de avances:', close: 'Confirmen hitos alcanzados y próximos entregables.' },
+      directorio: { open: 'Informe de progreso ejecutivo:', close: 'Presentaremos resultados detallados en la siguiente sesión.' }
+    },
+    directo: {
+      jefe: { open: 'Estado de', close: '¿Necesita algo más o seguimos así?' },
+      cliente: { open: 'Así vamos con', close: '¿Hay algo que cambiar o continuamos?' },
+      proveedor: { open: '¿Dónde está', close: 'Fecha comprometida ya pasó. Necesito respuesta realista hoy.' },
+      equipo: { open: 'Check-in rápido:', close: 'Bloqueos? Ayuda? Respondan breve.' },
+      directorio: { open: 'Resumen ejecutivo de', close: 'Números verdes. Continuamos sin cambios.' }
+    },
+    urgente: {
+      jefe: { open: 'ALERTA: Estancamiento detectado en', close: 'Necesito intervención directa o delegación de autoridad para desbloquear.' },
+      cliente: { open: 'ALERTA: Riesgo de incumplimiento en', close: 'Necesitamos su colaboración inmediata o renegociaremos alcance.' },
+      proveedor: { open: 'ALERTA: Entrega crítica de', close: 'está en riesgo. Necesito plan de contingencia en 4 horas.' },
+      equipo: { open: 'ALERTA: Bloqueo activo en', close: 'Escalaré a dirección si no hay resolución en esta jornada.' },
+      directorio: { open: 'ALERTA EJECUTIVA: Dependencia crítica sin resolver:', close: 'Requiere decisión estratégica en 24h o ajustamos proyección trimestral.' }
+    }
+  },
+  recordatorio: {
+    formal: {
+      jefe: { open: 'Le recordamos amablemente que', close: 'Agradecemos su atención a la brevedad posible.' },
+      cliente: { open: 'Le recordamos que', close: 'Quedamos atentos para continuar con el proceso.' },
+      proveedor: { open: 'Recordatorio formal:', close: 'Solicitamos actualización de estado.' },
+      equipo: { open: 'Recordatorio del equipo:', close: 'Confirmen avance para mantener la planificación.' },
+      directorio: { open: 'Recordatorio ejecutivo:', close: 'Se requiere su participación para mantener los tiempos.' }
+    },
+    directo: {
+      jefe: { open: 'Recordatorio:', close: '¿Ya revisó? Necesito go/no-go.' },
+      cliente: { open: 'Recordatorio:', close: 'Sin su respuesta no avanzamos.' },
+      proveedor: { open: 'Recordatorio:', close: 'Fecha acordada: X. ¿Sí o no?' },
+      equipo: { open: 'Recordatorio:', close: 'Deadline: X. ¿Listo o no?' },
+      directorio: { open: 'Recordatorio:', close: 'Su firma necesaria para continuar.' }
+    },
+    urgente: {
+      jefe: { open: 'ÚLTIMO RECORDATORIO:', close: 'Sin respuesta hoy, actuaré por mi cuenta bajo mi mejor criterio.' },
+      cliente: { open: 'ÚLTIMO RECORDATORIO:', close: 'Cerraremos el ticket si no hay respuesta en 24h.' },
+      proveedor: { open: 'ÚLTIMO RECORDATORIO:', close: 'Activaremos cláusula penal por incumplimiento si no hay respuesta.' },
+      equipo: { open: 'ÚLTIMO RECORDATORIO:', close: 'Reportaré a RRHH si no hay respuesta en esta jornada.' },
+      directorio: { open: 'ÚLTIMO RECORDATORIO EJECUTIVO:', close: 'La operación se ajustará sin su input. Registrado para acta.' }
+    }
+  },
+  rechazo: {
+    formal: {
+      jefe: { open: 'Tras evaluar la solicitud respecto a', close: 'La información adjunta justifica la decisión. Quedo atento a sus comentarios.' },
+      cliente: { open: 'Agradecemos su propuesta referente a', close: 'No es viable en las condiciones actuales. Quedamos abiertos a reevaluar en el futuro.' },
+      proveedor: { open: 'Tras revisar su oferta para', close: 'No cumple con los requerimientos establecidos. No continuaremos con esta opción.' },
+      equipo: { open: 'Evaluación de propuesta:', close: 'No procede. Buscaremos alternativa.' },
+      directorio: { open: 'Dictamen ejecutivo:', close: 'Rechazado. Recursos reasignados a prioridades aprobadas.' }
+    },
+    directo: {
+      jefe: { open: 'No procede:', close: 'Motivo adjunto. Siguiente propuesta?' },
+      cliente: { open: 'No podemos avanzar con', close: 'No negociable. Alternativas?' },
+      proveedor: { open: 'Descartado:', close: 'No cumple especificaciones. No insistir.' },
+      equipo: { open: 'Rechazado:', close: 'Volver a plan A. Sin discusión.' },
+      directorio: { open: 'Rechazado:', close: 'Ejecutar plan alternativo aprobado.' }
+    },
+    urgente: {
+      jefe: { open: 'BAJA INMEDIATA:', close: 'Riesgo operativo detectado. Ejecutar contingencia ahora.' },
+      cliente: { open: 'BAJA INMEDIATA:', close: 'La asociación genera riesgo reputacional. Cerramos vinculación.' },
+      proveedor: { open: 'BAJA INMEDIATA:', close: 'Incumplimiento crítico. Activar cláusula de rescisión.' },
+      equipo: { open: 'BAJA INMEDIATA:', close: 'El enfoque es inviable. Pivotar hoy o perdemos el sprint.' },
+      directorio: { open: 'BAJA EJECUTIVA INMEDIATA:', close: 'Impacto financiero negativo confirmado. Detener todo gasto asociado.' }
+    }
+  },
+  aceptacion: {
+    formal: {
+      jefe: { open: 'Confirmo la aprobación de', close: 'Proceda con la ejecución según lo planificado.' },
+      cliente: { open: 'Confirmamos la aceptación de', close: 'Iniciamos ejecución inmediata. Punto de contacto asignado.' },
+      proveedor: { open: 'Confirmamos la orden de compra para', close: 'Adjunto PO formal. Fecha de entrega requerida: [fecha].' },
+      equipo: { open: 'Aprobado:', close: 'Ejecutar según plan. Reportar hitos.' },
+      directorio: { open: 'Resolución ejecutiva:', close: 'Aprobado. Presupuesto liberado. Comunicar a stakeholders.' }
+    },
+    directo: {
+      jefe: { open: 'Aprobado:', close: 'Adelante. Sin reportes semanales, solo si hay problema.' },
+      cliente: { open: 'Aprobado:', close: 'Empezamos mañana. Punto de contacto: [nombre].' },
+      proveedor: { open: 'Aprobado:', close: 'PO enviado. Entrega: [fecha]. Retraso = penalidad.' },
+      equipo: { open: 'Aprobado:', close: 'Sin reuniones de seguimiento, solo entregables.' },
+      directorio: { open: 'Aprobado:', close: 'Ejecutar. Reporte solo al cierre.' }
+    },
+    urgente: {
+      jefe: { open: 'APROBADO URGENTE:', close: 'Ejecutar inmediatamente. Yo asumo la responsabilidad.' },
+      cliente: { open: 'APROBADO URGENTE:', close: 'Comenzamos hoy. Facturación acelerada.' },
+      proveedor: { open: 'APROBADO URGENTE:', close: 'Entrega exprés. Pago adelantado autorizado.' },
+      equipo: { open: 'APROBADO URGENTE:', close: 'All-nighter autorizado. Compensación aprobada.' },
+      directorio: { open: 'APROBADO EJECUTIVO URGENTE:', close: 'Recursos ilimitados asignados. Fallar no es opción.' }
+    }
+  },
+  escalacion: {
+    formal: {
+      jefe: { open: 'Escalo a su nivel por bloqueo en', close: 'Requiero su intervención para desbloquear y mantener cronograma.' },
+      cliente: { open: 'Escalamos a dirección por falta de acuerdo en', close: 'Necesitamos posición de alta gerencia para continuar.' },
+      proveedor: { open: 'Escalación formal por incumplimiento en', close: 'Sin resolución en 48h, activaremos cláusulas contractuales.' },
+      equipo: { open: 'Escalación interna:', close: 'Requiero intervención de dirección para resolver conflicto de prioridades.' },
+      directorio: { open: 'Escalación ejecutiva:', close: 'La operación requiere decisión estratégica que excede mi nivel de autoridad.' }
+    },
+    directo: {
+      jefe: { open: 'Necesito que subas tú:', close: 'Bloqueo fuera de mi nivel. Decisión tuya o de dirección.' },
+      cliente: { open: 'Esto ya no lo resuelvo yo:', close: 'Necesito hablar con quien decide. Hoy.' },
+      proveedor: { open: 'Esto sube a legal:', close: 'Incumplimiento grave. Mi jefe o el tuyo, resolvamos.' },
+      equipo: { open: 'Escalo a RRHH/Dirección:', close: 'Conflicto que no puedo resolver. Intervención externa necesaria.' },
+      directorio: { open: 'Esto necesita board:', close: 'Impacto transversal. Decisión colegiada requerida.' }
+    },
+    urgente: {
+      jefe: { open: 'ESCALACIÓN CRÍTICA:', close: 'La operación está parada. Necesito su decisión en 2 horas o perdemos X.' },
+      cliente: { open: 'ESCALACIÓN CRÍTICA:', close: 'El proyecto se detiene hoy sin su intervención directa.' },
+      proveedor: { open: 'ESCALACIÓN CRÍTICA:', close: 'Última instancia antes de acciones legales. Resolución en 24h.' },
+      equipo: { open: 'ESCALACIÓN CRÍTICA:', close: 'Quiebre de equipo. Necesito mediación externa inmediata.' },
+      directorio: { open: 'ESCALACIÓN CRÍTICA AL BOARD:', close: 'La empresa está en riesgo. Sesión extraordinaria requerida.' }
+    }
+  }
+};
+
+var saved = JSON.parse(localStorage.getItem('mailforge') || '[]');
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+function getActive(id) {
+  var grid = document.getElementById(id);
+  var active = grid.querySelector('.chip.active');
+  return active ? active.dataset.val : null;
+}
+
+function setupChips(id) {
+  var chips = document.getElementById(id).querySelectorAll('.chip');
+  for (var i = 0; i < chips.length; i++) {
+    chips[i].addEventListener('click', function() {
+      var parent = this.parentElement;
+      var siblings = parent.querySelectorAll('.chip');
+      for (var s = 0; s < siblings.length; s++) siblings[s].classList.remove('active');
+      this.classList.add('active');
+    });
+  }
+}
+
+setupChips('typeChips');
+setupChips('toneChips');
+setupChips('audienceChips');
+
+function generateEmail() {
+  var type = getActive('typeChips');
+  var tone = getActive('toneChips');
+  var aud = getActive('audienceChips');
+  var asunto = document.getElementById('asuntoInput').value.trim();
+  var detalle = document.getElementById('detalleInput').value.trim();
+
+  var tpl = TEMPLATES[type][tone][aud];
+  var subject = asunto || (type.charAt(0).toUpperCase() + type.slice(1)) + ' — ' + aud;
+
+  var body = '';
+  if (tone === 'urgente') body += '—\n\n';
+  body += tpl.open + (asunto ? ' ' + asunto + '.' : '.');
+  if (detalle) body += '\n\n' + detalle;
+  body += '\n\n' + tpl.close;
+  if (tone === 'urgente') body += '\n\n—';
+
+  var resultHtml =
+    '<div class="result-box">' +
+    '<div class="meta"><span>' + type.toUpperCase() + ' · ' + tone.toUpperCase() + ' · ' + aud.toUpperCase() + '</span></div>' +
+    '<div class="subject-line">Asunto: ' + esc(subject) + '</div>' +
+    '<div class="body-text">' + esc(body).replace(/\n/g, '<br>') + '</div>' +
+    '<div class="btn-row">' +
+    '<button class="btn btn-copy" onclick="copyEmail()">Copiar Todo</button>' +
+    '<button class="btn btn-generate" style="background:var(--surface2);color:var(--text)" onclick="saveEmail()">Guardar</button>' +
+    '</div></div>';
+
+  document.getElementById('resultArea').innerHTML = resultHtml;
+  window.currentSubject = subject;
+  window.currentBody = body;
+}
+
+function esc(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyEmail() {
+  var text = 'Asunto: ' + window.currentSubject + '\n\n' + window.currentBody;
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('Copiado');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copiado');
+  });
+}
+
+function saveEmail() {
+  if (!window.currentSubject) return;
+  var item = {
+    type: getActive('typeChips'),
+    tone: getActive('toneChips'),
+    aud: getActive('audienceChips'),
+    subject: window.currentSubject,
+    body: window.currentBody,
+    time: new Date().toISOString()
+  };
+  saved.unshift(item);
+  if (saved.length > 50) saved = saved.slice(0, 50);
+  localStorage.setItem('mailforge', JSON.stringify(saved));
+  showToast('Guardado');
+  renderSaved();
+}
+
+function renderSaved() {
+  var box = document.getElementById('savedArea');
+  if (!saved.length) {
+    box.innerHTML = '<div class="empty">Sin guardados aún</div>';
+    return;
+  }
+  box.innerHTML = '';
+  for (var i = 0; i < Math.min(saved.length, 10); i++) {
+    var s = saved[i];
+    var d = document.createElement('div');
+    d.className = 'saved-item';
+    d.innerHTML = '<div class="title">' + esc(s.subject) + '</div><div class="date">' + s.type + ' · ' + s.tone + ' · ' + new Date(s.time).toLocaleDateString() + '</div>';
+    d.onclick = function() {
+      var idx = this.dataset.idx;
+      var item = saved[idx];
+      document.getElementById('resultArea').innerHTML =
+        '<div class="result-box">' +
+        '<div class="meta"><span>' + item.type.toUpperCase() + ' · ' + item.tone.toUpperCase() + '</span></div>' +
+        '<div class="subject-line">Asunto: ' + esc(item.subject) + '</div>' +
+        '<div class="body-text">' + esc(item.body).replace(/\n/g, '<br>') + '</div>' +
+        '<div class="btn-row">' +
+        '<button class="btn btn-copy" onclick="copySaved(' + idx + ')">Copiar</button>' +
+        '</div></div>';
+    };
+    d.dataset.idx = i;
+    box.appendChild(d);
+  }
+}
+
+function copySaved(idx) {
+  var s = saved[idx];
+  var text = 'Asunto: ' + s.subject + '\n\n' + s.body;
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('Copiado');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copiado');
+  });
+}
+
+renderSaved();
+</script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Visual Lab</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#000;--surface:#0a0a0a;--surface2:#141414;--border:#222;--text:#e8e8e8;--text2:#888;--accent:#ff3366;--accent2:#33ff88;--warn:#ffaa33}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:80px}
+.header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px}
+.header h1{font-size:18px;font-weight:700;letter-spacing:0.5px}
+.header .badge{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.section{display:none;padding:16px;animation:fadeIn .3s}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin:20px 0 8px}
+textarea,input[type="number"]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-size:15px;font-family:inherit;outline:none;resize:vertical}
+textarea{min-height:100px}
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:10px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;user-select:none;color:var(--text2)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.chip.locked{border-color:var(--accent2);color:var(--accent2)}
+.category{margin:20px 0;padding:16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+.category-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:12px;display:flex;justify-content:space-between}
+.prompt-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin:16px 0}
+.prompt-card .meta{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;justify-content:space-between}
+.prompt-card .meta .changed{color:var(--warn);font-weight:700}
+.prompt-text{font-size:14px;line-height:1.6;word-break:break-word;font-family:monospace;color:var(--text);padding:10px;background:var(--surface2);border-radius:8px;margin:8px 0}
+.actions{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-copy{background:var(--accent);color:#fff}
+.btn-win{background:var(--surface2);border:1px solid var(--accent2);color:var(--accent2);font-size:13px;padding:10px}
+.btn-fail{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-size:13px;padding:10px}
+.btn-generate{background:var(--accent);color:#fff;width:100%;margin:20px 0;padding:18px;font-size:16px}
+.log-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border-radius:12px;margin:8px 0;border:1px solid var(--border)}
+.log-item .status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.log-item .status-dot.win{background:var(--accent2)}
+.log-item .status-dot.fail{background:var(--accent)}
+.log-item .info{flex:1;min-width:0}
+.log-item .title{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-item .date{font-size:11px;color:var(--text2)}
+.empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
+.empty .icon{font-size:48px;margin-bottom:12px;opacity:.5}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:200;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.inline-control{display:flex;align-items:center;gap:10px;margin:8px 0}
+.inline-control span{font-size:13px;color:var(--text2)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-label{font-size:14px}
+.toggle-label small{display:block;color:var(--text2);font-size:12px;margin-top:2px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-btn{flex:1;padding:14px;background:none;border:none;color:var(--text2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.nav-btn .icon{font-size:20px}
+.nav-btn.active{color:var(--accent)}
+.compare-item{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer}
+.compare-item.selected{border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="header"><div><h1>Visual Lab</h1><div class="badge">MJ V8.1</div></div></div>
+
+<div class="bottom-nav">
+<button class="nav-btn active" data-tab="forge"><span class="icon">⚗️</span><span>Forge</span></button>
+<button class="nav-btn" data-tab="variations"><span class="icon">🔀</span><span>Vars</span></button>
+<button class="nav-btn" data-tab="compare"><span class="icon">⚖️</span><span>Comp</span></button>
+<button class="nav-btn" data-tab="log"><span class="icon">📝</span><span>Log</span></button>
+</div>
+
+<div class="section active" id="forge">
+<span class="label">Base Prompt</span>
+<textarea id="basePrompt" placeholder="Paste your prompt here..."></textarea>
+<div class="toggle-row"><div class="toggle-label">Brutal Physique<small>Auto-inject hyper musculature</small></div><input type="checkbox" id="brutalMode" checked></div>
+<div class="toggle-row"><div class="toggle-label">AR 9:20<small>Phone wallpaper format</small></div><input type="checkbox" id="arLock" checked></div>
+<span class="label">Lock</span>
+<div class="chip-grid"><div class="chip locked">Physique</div><div class="chip locked">Light</div><div class="chip locked">Camera</div></div>
+<button class="btn btn-generate" onclick="goToVars()">Build Variations →</button>
+</div>
+
+<div class="section" id="variations">
+<span class="label">Test Variable</span>
+<div class="category"><div class="category-title">Actress</div><div class="chip-grid" id="actressChips"><div class="chip active">Anya Taylor-Joy</div><div class="chip">Tessa Thompson</div><div class="chip">Zendaya</div><div class="chip">Florence Pugh</div></div></div>
+<div class="category"><div class="category-title">Clothing</div><div class="chip-grid" id="clothingChips"><div class="chip">Tactical Bikini</div><div class="chip">Casual Wet</div><div class="chip">Superhero Suit</div><div class="chip">Duster Jacket</div></div></div>
+<div class="category"><div class="category-title">Setting</div><div class="chip-grid" id="settingChips"><div class="chip">Space Orbit</div><div class="chip">Desert Storm</div><div class="chip">Rain Street</div><div class="chip">Vintage Studio</div></div></div>
+<div class="category"><div class="category-title">Lighting</div><div class="chip-grid" id="lightingChips"><div class="chip">Golden Hour</div><div class="chip">Neon Cold</div><div class="chip">Side Light</div><div class="chip">Backlit</div></div></div>
+<div class="category"><div class="category-title">Chaos (Sweet: 15)</div><div class="chip-grid" id="chaosChips"><div class="chip">3</div><div class="chip">8</div><div class="chip active">15</div><div class="chip">25</div></div></div>
+<div class="category"><div class="category-title">Stylize</div><div class="chip-grid" id="stylizeChips"><div class="chip">60</div><div class="chip active">80</div><div class="chip">100</div></div></div>
+<div class="inline-control"><span>Vars:</span><input type="number" id="varCount" value="4" min="2" max="8"></div>
+<button class="btn btn-generate" onclick="generate()">Generate</button>
+<div id="results"></div>
+</div>
+
+<div class="section" id="compare">
+<span class="label">Select 2-4</span>
+<div id="compareList"></div>
+<button class="btn btn-generate" onclick="runCompare()" id="compareBtn" style="display:none">Compare</button>
+<div id="compareResult"></div>
+</div>
+
+<div class="section" id="log">
+<span class="label">History</span>
+<div id="logList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- DATA ----
+var PRESETS = {
+  actress: {
+    'Anya Taylor-Joy': 'Anya Taylor-Joy, intense gaze',
+    'Tessa Thompson': 'Tessa Thompson, warm complexion',
+    'Zendaya': 'Zendaya, elegant silhouette',
+    'Florence Pugh': 'Florence Pugh, strong presence'
+  },
+  clothing: {
+    'Tactical Bikini': 'tactical bikini armor, utility straps',
+    'Casual Wet': 'casual wet clothing, soaked fabric, low-waist',
+    'Superhero Suit': 'form-fitting superhero suit, metallic accents',
+    'Duster Jacket': 'long duster jacket, flowing fabric'
+  },
+  setting: {
+    'Space Orbit': 'floating in low Earth orbit, planet curvature visible',
+    'Desert Storm': 'dust storm, golden particles, harsh sunlight',
+    'Rain Street': 'rain-soaked city street, neon reflections',
+    'Vintage Studio': 'vintage recording studio, analog equipment, warm wood'
+  },
+  lighting: {
+    'Golden Hour': 'warm golden hour light, long shadows',
+    'Neon Cold': 'cold neon light, cyan and magenta, high contrast',
+    'Side Light': 'dramatic side lighting, split face, cinematic',
+    'Backlit': 'strong backlight, silhouette edges, volumetric haze'
+  }
+};
+
+var BRUTAL = 'hyper-exaggerated visible musculature, defined abs, real skin grain texture';
+var exps = JSON.parse(localStorage.getItem('vl') || '[]');
+var sel = [];
+
+// ---- INIT ----
+document.addEventListener('DOMContentLoaded', function() {
+  // Nav buttons
+  var navBtns = document.querySelectorAll('.nav-btn');
+  for (var i = 0; i < navBtns.length; i++) {
+    navBtns[i].addEventListener('click', function() {
+      switchTab(this.dataset.tab);
+    });
+  }
+
+  // Chips - single selection per group
+  var chipGrids = document.querySelectorAll('#actressChips, #clothingChips, #settingChips, #lightingChips, #chaosChips, #stylizeChips');
+  for (var g = 0; g < chipGrids.length; g++) {
+    var chips = chipGrids[g].querySelectorAll('.chip');
+    for (var c = 0; c < chips.length; c++) {
+      chips[c].addEventListener('click', function() {
+        var parent = this.parentElement;
+        var siblings = parent.querySelectorAll('.chip');
+        for (var s = 0; s < siblings.length; s++) {
+          siblings[s].classList.remove('active');
+        }
+        this.classList.add('active');
+      });
+    }
+  }
+
+  // Lock chips
+  var lockChips = document.querySelectorAll('.chip.locked');
+  for (var l = 0; l < lockChips.length; l++) {
+    lockChips[l].addEventListener('click', function() {
+      this.classList.toggle('locked');
+    });
+  }
+
+  showToast('Visual Lab ready');
+});
+
+// ---- NAV ----
+function switchTab(tab) {
+  var sections = document.querySelectorAll('.section');
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].classList.remove('active');
+  }
+  var navs = document.querySelectorAll('.nav-btn');
+  for (var i = 0; i < navs.length; i++) {
+    navs[i].classList.remove('active');
+  }
+  document.getElementById(tab).classList.add('active');
+  document.querySelector('.nav-btn[data-tab="' + tab + '"]').classList.add('active');
+
+  if (tab === 'log') renderLog();
+  if (tab === 'compare') renderCompare();
+}
+
+function goToVars() {
+  var val = document.getElementById('basePrompt').value.trim();
+  if (!val) {
+    showToast('Paste prompt first');
+    return;
+  }
+  switchTab('variations');
+}
+
+// ---- GENERATE ----
+function getActive(id) {
+  var grid = document.getElementById(id);
+  if (!grid) return null;
+  var active = grid.querySelector('.chip.active');
+  return active ? active.textContent : null;
+}
+
+function generate() {
+  var base = document.getElementById('basePrompt').value.trim();
+  if (!base) {
+    showToast('No prompt');
+    return;
+  }
+
+  var brutal = document.getElementById('brutalMode').checked;
+  var arL = document.getElementById('arLock').checked;
+  var n = parseInt(document.getElementById('varCount').value) || 4;
+
+  var a = getActive('actressChips');
+  var cl = getActive('clothingChips');
+  var s = getActive('settingChips');
+  var l = getActive('lightingChips');
+  var c = getActive('chaosChips') || '15';
+  var st = getActive('stylizeChips') || '80';
+
+  var results = [];
+
+  for (var i = 0; i < n; i++) {
+    var p = base;
+    if (brutal && p.indexOf('musculature') === -1) {
+      p += ', ' + BRUTAL;
+    }
+
+    var changed = [];
+
+    if (a && PRESETS.actress[a]) {
+      p += ', ' + PRESETS.actress[a];
+      changed.push(a);
+    }
+    if (cl && PRESETS.clothing[cl]) {
+      p += ', ' + PRESETS.clothing[cl];
+      changed.push(cl);
+    }
+    if (s && PRESETS.setting[s]) {
+      p += ', ' + PRESETS.setting[s];
+      changed.push(s);
+    }
+    if (l && PRESETS.lighting[l]) {
+      p += ', ' + PRESETS.lighting[l];
+      changed.push(l);
+    }
+
+    var ar = arL ? ' --ar 9:20' : '';
+    p += ' --raw --s ' + st + ' --c ' + c + ar;
+
+    results.push({
+      id: Date.now() + i,
+      prompt: p,
+      changed: changed.join(', ') || 'Base+Params',
+      chaos: c,
+      stylize: st,
+      time: new Date().toISOString()
+    });
+  }
+
+  renderResults(results);
+}
+
+function renderResults(results) {
+  var box = document.getElementById('results');
+  box.innerHTML = '<span class="label">Prompts</span>';
+
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    var card = document.createElement('div');
+    card.className = 'prompt-card';
+
+    var changedHtml = '<span style="color:var(--warn);font-weight:700">' + esc(r.changed) + '</span>';
+
+    card.innerHTML =
+      '<div class="meta"><span>Var ' + (i + 1) + '</span>' + changedHtml + '</div>' +
+      '<div class="prompt-text" id="prompt-' + r.id + '">' + esc(r.prompt) + '</div>' +
+      '<div class="actions">' +
+      '<button class="btn btn-copy" onclick="copyPrompt(' + r.id + ')">Copy</button>' +
+      '<button class="btn btn-win" onclick="logResult(' + r.id + ', \'win\')">✅</button>' +
+      '<button class="btn btn-fail" onclick="logResult(' + r.id + ', \'fail\')">❌</button>' +
+      '</div>';
+
+    box.appendChild(card);
+  }
+
+  for (var j = 0; j < results.length; j++) {
+    exps.unshift(results[j]);
+  }
+  save();
+  showToast(results.length + ' ready');
+}
+
+function esc(t) {
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function copyPrompt(id) {
+  var exp = exps.find(function(e) { return e.id === id; });
+  if (!exp) return;
+
+  var text = exp.prompt;
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('Copied');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied');
+  });
+}
+
+function logResult(id, status) {
+  var exp = exps.find(function(e) { return e.id === id; });
+  if (exp) {
+    exp.status = status;
+    exp.loggedAt = new Date().toISOString();
+    save();
+    showToast(status === 'win' ? 'Wujuuuu!' : 'Baneado');
+  }
+}
+
+function save() {
+  localStorage.setItem('vl', JSON.stringify(exps.slice(0, 200)));
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() {
+    t.classList.remove('show');
+  }, 2000);
+}
+
+// ---- LOG ----
+function renderLog() {
+  var box = document.getElementById('logList');
+  if (!exps.length) {
+    box.innerHTML = '<div class="empty"><div class="icon">📝</div>No experiments yet</div>';
+    return;
+  }
+
+  box.innerHTML = '';
+  var slice = exps.slice(0, 50);
+
+  for (var i = 0; i < slice.length; i++) {
+    var e = slice[i];
+    var d = document.createElement('div');
+    d.className = 'log-item';
+    var st = e.status || 'untested';
+    var dotClass = st === 'win' ? 'win' : st === 'fail' ? 'fail' : '';
+    var dateStr = new Date(e.time).toLocaleDateString();
+
+    d.innerHTML =
+      '<div class="status-dot ' + dotClass + '"></div>' +
+      '<div class="info"><div class="title">' + esc(e.changed || 'Base') + '</div>' +
+      '<div class="date">' + dateStr + ' · c' + e.chaos + ' s' + e.stylize + '</div></div>' +
+      '<div style="display:flex;gap:6px">' +
+      '<button class="btn" style="padding:6px 12px;font-size:12px" onclick="copyPrompt(' + e.id + ')">Copy</button>' +
+      (e.status ? '' : '<button class="btn" style="padding:6px 12px;font-size:12px" onclick="logResult(' + e.id + ', \'win\')">✅</button><button class="btn" style="padding:6px 12px;font-size:12px" onclick="logResult(' + e.id + ', \'fail\')">❌</button>') +
+      '</div>';
+
+    box.appendChild(d);
+  }
+}
+
+// ---- COMPARE ----
+function renderCompare() {
+  var box = document.getElementById('compareList');
+  sel = [];
+  document.getElementById('compareBtn').style.display = 'none';
+  document.getElementById('compareResult').innerHTML = '';
+
+  if (!exps.length) {
+    box.innerHTML = '<div class="empty"><div class="icon">⚖️</div>Nothing to compare</div>';
+    return;
+  }
+
+  box.innerHTML = '<span class="label" style="margin-top:0">Tap to select (2-4)</span>';
+  var slice = exps.slice(0, 20);
+
+  for (var i = 0; i < slice.length; i++) {
+    var e = slice[i];
+    var d = document.createElement('div');
+    d.className = 'compare-item';
+    d.dataset.id = e.id;
+    d.innerHTML =
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">' + esc(e.changed || 'Base') + '</div>' +
+      '<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(e.prompt.substring(0, 60)) + '...</div>';
+
+    d.addEventListener('click', function() {
+      var id = parseInt(this.dataset.id);
+      this.classList.toggle('selected');
+      if (this.classList.contains('selected')) {
+        sel.push(id);
+      } else {
+        sel = sel.filter(function(x) { return x !== id; });
+      }
+      document.getElementById('compareBtn').style.display = sel.length >= 2 ? 'flex' : 'none';
+    });
+
+    box.appendChild(d);
+  }
+}
+
+function runCompare() {
+  var selected = exps.filter(function(e) { return sel.indexOf(e.id) !== -1; });
+  var box = document.getElementById('compareResult');
+  box.innerHTML = '<span class="label">Side by Side</span>';
+
+  for (var i = 0; i < selected.length; i++) {
+    var e = selected[i];
+    var d = document.createElement('div');
+    d.className = 'prompt-card';
+    d.innerHTML =
+      '<div class="meta"><span>' + esc(e.changed || 'Base') + '</span><span>c' + e.chaos + ' s' + e.stylize + '</span></div>' +
+      '<div class="prompt-text">' + esc(e.prompt) + '</div>' +
+      '<button class="btn btn-copy" style="margin-top:10px" onclick="copyPrompt(' + e.id + ')">Copy This</button>';
+    box.appendChild(d);
+  }
+}
+</script>
+</body>
+</html>
