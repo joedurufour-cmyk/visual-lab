@@ -20,10 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# Kimi API Configuration
+KIMI_API_KEY = os.getenv("KIMI_API_KEY", "")
 API_SECRET = os.getenv("API_SECRET", "default-secret-change-me")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-GROQ_BASE = "https://api.groq.com/openai/v1"
+KIMI_MODEL = os.getenv("KIMI_MODEL", "kimi-latest")
+KIMI_BASE = "https://api.moonshot.cn/v1"
 
 # ============================================================
 # Auth
@@ -69,6 +70,38 @@ class PromptResponse(BaseModel):
 
 class VariationsResponse(BaseModel):
     variations: List[dict]
+
+# ============================================================
+# Kimi LLM Helper
+# ============================================================
+async def kimi_chat(messages: list, system: str = "", temperature: float = 0.5, max_tokens: int = 2000) -> str:
+    if not KIMI_API_KEY:
+        raise HTTPException(status_code=500, detail="KIMI_API_KEY not configured")
+    
+    all_messages = []
+    if system:
+        all_messages.append({"role": "system", "content": system})
+    all_messages.extend(messages)
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(
+            f"{KIMI_BASE}/chat/completions",
+            headers={"Authorization": f"Bearer {KIMI_API_KEY}"},
+            json={
+                "model": KIMI_MODEL,
+                "messages": all_messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+        )
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Kimi API error: {resp.status_code} {resp.text}")
+    
+    data = resp.json()
+    return data["choices"][0]["message"]["content"]
+
+# Backward compat — alias
+groq_chat = kimi_chat
 
 # ============================================================
 # System prompts (encoded knowledge from visual-lab-pro)
@@ -130,23 +163,23 @@ Output valid JSON only. No markdown.
 # ============================================================
 # Helpers
 # ============================================================
-async def groq_chat(messages: list, temperature: float = 0.3, max_tokens: int = 800) -> str:
-    if not GROQ_API_KEY:
-        raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
+async def kimi_chat(messages: list, temperature: float = 0.3, max_tokens: int = 800) -> str:
+    if not KIMI_API_KEY:
+        raise HTTPException(status_code=500, detail="KIMI_API_KEY not configured")
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
-            f"{GROQ_BASE}/chat/completions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+            f"{KIMI_BASE}/chat/completions",
+            headers={"Authorization": f"Bearer {KIMI_API_KEY}"},
             json={
-                "model": GROQ_MODEL,
+                "model": KIMI_MODEL,
                 "messages": messages,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
             }
         )
     if resp.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Groq API error: {resp.status_code} {resp.text}")
+        raise HTTPException(status_code=502, detail=f"Kimi API error: {resp.status_code} {resp.text}")
     
     data = resp.json()
     return data["choices"][0]["message"]["content"]
@@ -175,7 +208,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "groq_configured": bool(GROQ_API_KEY)}
+    return {"ok": True, "kimi_configured": bool(KIMI_API_KEY)}
 
 @app.post("/api/translate", response_model=PromptResponse)
 async def translate(req: TranslateRequest, api_key: str = Depends(verify_api_key)):
@@ -188,7 +221,7 @@ Mode: {req.mode}
 
 Output only the prompt.'''
     
-    content = await groq_chat([
+    content = await kimi_chat([
         {"role": "system", "content": TRANSLATE_SYSTEM},
         {"role": "user", "content": user_msg}
     ])
@@ -211,7 +244,7 @@ Keep AR {req.ar}, stylize {req.stylize}, chaos {req.chaos}, version 8.1.
 
 Output only the refined prompt."""
     
-    content = await groq_chat([
+    content = await kimi_chat([
         {"role": "system", "content": ENHANCE_SYSTEM},
         {"role": "user", "content": user_msg}
     ])
@@ -246,7 +279,7 @@ Fixed parameters: --ar {req.ar} --raw --stylize {req.stylize} --c {req.chaos} --
 Return ONLY a JSON array. Example:
 [{{"changed": "Anya Taylor-Joy | Tactical Bikini", "prompt": "..."}}]"""
     
-    content = await groq_chat(
+    content = await kimi_chat(
         [
             {"role": "system", "content": VARIATIONS_SYSTEM},
             {"role": "user", "content": user_msg}
