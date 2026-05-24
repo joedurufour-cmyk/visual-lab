@@ -179,14 +179,14 @@ async def health():
 
 @app.post("/api/translate", response_model=PromptResponse)
 async def translate(req: TranslateRequest, api_key: str = Depends(verify_api_key)):
-    user_msg = f"""Translate this intention into a perfect Midjourney V8.1 prompt.
+    user_msg = f'''Translate this intention into a perfect Midjourney V8.1 prompt.
 
-Input: """{req.text}"""
+Input: "{req.text}"
 
 Parameters: --ar {req.ar} --raw --stylize {req.stylize} --c {req.chaos} --v 8.1
 Mode: {req.mode}
 
-Output only the prompt."""
+Output only the prompt.'''
     
     content = await kimi_chat([
         {"role": "system", "content": TRANSLATE_SYSTEM},
