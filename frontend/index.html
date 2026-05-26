@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Visual Lab PRO v5</title>
+<title>Visual Lab PRO v6 · CAV</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--bg:#000;--surface:#0a0a0a;--surface2:#141414;--surface3:#1a1a1a;--border:#222;--text:#e8e8e8;--text2:#888;--text3:#555;--accent:#ff3366;--accent2:#33ff88;--accent3:#3388ff;--warn:#ffaa33;--kimi:#cc77ff}
@@ -97,7 +97,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 </head>
 <body>
 <div class="header">
-  <div><h1>Visual Lab PRO</h1><div class="badge">Blocks x MJ 8.1 v5</div></div>
+  <div><h1>Visual Lab PRO</h1><div class="badge">Blocks x MJ 8.1 v6 · CAV</div></div>
 </div>
 
 <div class="bottom-nav">
@@ -107,7 +107,6 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   <button class="nav-btn" data-tab="vars"><span class="icon">🔀</span><span>Vars</span></button>
   <button class="nav-btn" data-tab="comp"><span class="icon">⚖️</span><span>Comp</span></button>
   <button class="nav-btn blocks" data-tab="blocks"><span class="icon">🧱</span><span>Blocks</span></button>
-  <button class="nav-btn" data-tab="settings"><span class="icon">⚙️</span><span>Config</span></button>
   <button class="nav-btn" data-tab="log"><span class="icon">📝</span><span>Log</span></button>
 </div>
 
@@ -311,26 +310,6 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <button class="btn btn-fail" onclick="saveMixedToLog('fail')">❌</button>
   </div>
 </div>
-</div>
-
-<!-- === SETTINGS (Cloud) === -->
-<div class="section" id="settings">
-<span class="label">Cloud Backend</span>
-<div class="toggle-row"><div class="toggle-label">Use Cloud Mode<small>Send requests to Render backend + Kimi API</small></div><input type="checkbox" id="cloudToggle" onchange="saveCloudConfig()"></div>
-<span class="label">Backend URL</span>
-<input type="text" id="backendUrl" placeholder="https://visual-lab-api.onrender.com" onchange="saveCloudConfig()">
-<span class="label">API Secret</span>
-<input type="text" id="apiSecret" placeholder="vl-pro-secret-key" onchange="saveCloudConfig()">
-<div class="tip-box" style="margin-top:20px">
-<k>How to use:</k><br>
-1. Deploy backend to Render<br>
-2. Copy URL + API secret from Render dashboard<br>
-3. Paste here and enable Cloud Mode<br>
-4. "Native" and "Enhance" will call the real LLM
-</div>
-<span class="label">Connection Test</span>
-<button class="btn btn-kimi" onclick="testConnection()" style="width:100%">Test Connection →</button>
-<div id="connResult" style="margin-top:12px"></div>
 </div>
 
 <!-- === LOG === -->
@@ -782,7 +761,6 @@ document.addEventListener('DOMContentLoaded', function() {
   updateBlockSelectors();
   if (blocks.length > 0) document.getElementById('mixerPanel').style.display = 'block';
 
-  loadCloudConfig();
   showToast('Visual Lab PRO v5 · Blocks ready');
 });
 
@@ -887,73 +865,6 @@ function nativeTranslate() {
   card.appendChild(metaDiv);
   card.appendChild(actions);
   box.appendChild(card);
-}
-
-// ============================================================
-// CLOUD MODE
-// ============================================================
-var CLOUD_CONFIG_KEY = 'vlpro_cloud';
-
-function getCloudConfig() {
-  try { return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY) || '{}'); } catch(e) { return {}; }
-}
-
-function saveCloudConfig() {
-  var cfg = {
-    enabled: document.getElementById('cloudToggle').checked,
-    url: document.getElementById('backendUrl').value.trim(),
-    secret: document.getElementById('apiSecret').value.trim()
-  };
-  localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
-  showToast(cfg.enabled ? 'Cloud mode ON' : 'Cloud mode OFF');
-}
-
-function loadCloudConfig() {
-  var cfg = getCloudConfig();
-  document.getElementById('cloudToggle').checked = !!cfg.enabled;
-  document.getElementById('backendUrl').value = cfg.url || '';
-  document.getElementById('apiSecret').value = cfg.secret || '';
-}
-
-function isCloudMode() {
-  var cfg = getCloudConfig();
-  return !!(cfg.enabled && cfg.url && cfg.secret);
-}
-
-async function apiCall(endpoint, body) {
-  var cfg = getCloudConfig();
-  var url = cfg.url.replace(/\/+$/, '') + endpoint;
-  try {
-    var resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': cfg.secret
-      },
-      body: JSON.stringify(body)
-    });
-    if (!resp.ok) {
-      var err = await resp.text();
-      throw new Error('HTTP ' + resp.status + ': ' + err);
-    }
-    return await resp.json();
-  } catch(e) {
-    showToast('Cloud error: ' + e.message);
-    throw e;
-  }
-}
-
-async function testConnection() {
-  var cfg = getCloudConfig();
-  if (!cfg.url || !cfg.secret) { showToast('Fill URL and Secret first'); return; }
-  showToast('Testing...');
-  try {
-    var resp = await fetch(cfg.url.replace(/\/+$/, '') + '/health');
-    var data = await resp.json();
-    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent2)"><k>OK:</k> Backend ' + (data.kimi_configured ? 'ready + LLM connected' : 'ready but NO API key') + '</div>';
-  } catch(e) {
-    document.getElementById('connResult').innerHTML = '<div class="tip-box" style="border-color:var(--accent)"><k>FAIL:</k> ' + e.message + '</div>';
-  }
 }
 
 function kimify(text) {
@@ -1189,35 +1100,14 @@ function optimizeKimi(prompt) {
   var physiqueWords = ['abs','musculature','torso','rectus','serratus','oblique','vascular'];
   var hasPhysique = false;
   for (var i = 0; i < physiqueWords.length; i++) { if (prompt.indexOf(physiqueWords[i]) !== -1) { hasPhysique = true; break; } }
-  
-  // Check for female indicators INCLUDING actress names
-  var lower = prompt.toLowerCase();
-  var femaleWords = ['female','woman','mujer','chica','girl','she','her'];
-  var hasFemale = femaleWords.some(function(w) { return lower.indexOf(w) !== -1; });
-  
-  // BUGFIX: Also detect actress names as female indicator
-  if (!hasFemale) {
-    for (var a = 0; a < ACTRESSES.length; a++) {
-      var firstName = ACTRESSES[a].split(' ')[0].toLowerCase();
-      var fullName = ACTRESSES[a].toLowerCase().replace(/-/g, ' ');
-      if (lower.indexOf(firstName) !== -1 || lower.indexOf(fullName) !== -1) {
-        hasFemale = true;
-        break;
-      }
-    }
+  if (!hasPhysique) { prompt = 'Cinematic full-body portrait with hyper-defined visible musculature, female figure, ' + prompt; }
+  else {
+    // Ensure female is in the prompt if not already
+    var lower = prompt.toLowerCase();
+    var femaleWords = ['female','woman','mujer','chica','girl'];
+    var hasFemale = femaleWords.some(function(w) { return lower.indexOf(w) !== -1; });
+    if (!hasFemale) { prompt = 'Cinematic full-body portrait of female figure, ' + prompt; }
   }
-  
-  if (!hasPhysique && !hasFemale) {
-    prompt = 'Cinematic full-body portrait with hyper-defined visible musculature, female figure, ' + prompt;
-  }
-  else if (!hasPhysique && hasFemale) {
-    prompt = 'Cinematic full-body portrait with hyper-defined visible musculature, ' + prompt;
-  }
-  else if (hasPhysique && !hasFemale) {
-    prompt = 'Cinematic full-body portrait of female figure, ' + prompt;
-  }
-  // If both physique and female present, don't prepend anything
-  
   prompt = prompt.replace(/,\s*,/g, ',').replace(/,\s*$/g, '');
   return prompt;
 }
@@ -1376,6 +1266,360 @@ function runCompare() {
     box.appendChild(d);
   }
 }
+
+
+// ============================================================
+// CAV — Camera & Visual Recipe Engine v1.0
+// ============================================================
+var CAV_RECIPES = {
+  version: "1.0.0",
+  categories: [
+    { id: "framing", name: "Framing / Plano", max: 1, tokens: [
+      {t: "extreme close-up", d: "5-30cm, microscopic detail"},
+      {t: "close-up portrait", d: "50cm-1.5m, microexpressions"},
+      {t: "medium close-up", d: "1.5-2.5m, chest up"},
+      {t: "medium shot", d: "2-4m, waist up, editorial"},
+      {t: "cowboy shot", d: "3-5m, thighs up, action"},
+      {t: "full body shot", d: "5-10m, complete anatomy"},
+      {t: "extreme wide shot", d: ">15m, epic scale"},
+      {t: "over-the-shoulder shot", d: "dialogue, POV"}
+    ]},
+    { id: "angle", name: "Camera Angle", max: 1, tokens: [
+      {t: "eye level shot", d: "neutral documentary"},
+      {t: "low angle shot", d: "power, monumental"},
+      {t: "high angle shot", d: "vulnerability"},
+      {t: "overhead shot", d: "pattern, symmetry"},
+      {t: "dutch angle", d: "tension, thriller"},
+      {t: "three-quarter view", d: "flattering volume"},
+      {t: "profile shot", d: "silhouette, artistic"},
+      {t: "worm's eye view", d: "extreme low, distortion"}
+    ]},
+    { id: "position", name: "Subject Position", max: 2, tokens: [
+      {t: "subject on left third", d: "lead room right"},
+      {t: "centered subject", d: "symmetry"},
+      {t: "subject far left", d: "tension"},
+      {t: "subject at top of frame", d: "elevation"},
+      {t: "subject at bottom of frame", d: "smallness"},
+      {t: "subject in foreground", d: "immersion"},
+      {t: "subject in midground", d: "layered"},
+      {t: "depth of field separation", d: "clean planes"},
+      {t: "foreground bokeh framing", d: "natural frame"}
+    ]},
+    { id: "pose", name: "Pose / Postura", max: 2, tokens: [
+      {t: "relaxed standing, weight shifted to one hip", d: "natural asymmetry"},
+      {t: "hands on hips, confident posture", d: "power"},
+      {t: "walking mid-stride, candid", d: "movement"},
+      {t: "crouching, knees bent", d: "preparation"},
+      {t: "arms crossed, defensive posture", d: "authority"},
+      {t: "arms open, expansive gesture", d: "inclusion"},
+      {t: "leaning against wall, casual", d: "relaxed tension"},
+      {t: "seated on ground, knees up", d: "vulnerable openness"}
+    ]},
+    { id: "expression", name: "Expression / Micro", max: 2, tokens: [
+      {t: "slight chin down, eyes up", d: "intense, sensual"},
+      {t: "chin up, looking down at camera", d: "superiority"},
+      {t: "subtle smile, eyes crinkling", d: "Duchenne, authentic"},
+      {t: "slight smirk, asymmetric", d: "irony, defiant"},
+      {t: "intense gaze, slightly furrowed brow", d: "concentration"},
+      {t: "raw emotion, tears forming", d: "vulnerability"},
+      {t: "neutral expression, mouth closed", d: "contemplative"},
+      {t: "parted lips, soft breathing", d: "intimacy"}
+    ]},
+    { id: "lighting", name: "Lighting", max: 2, tokens: [
+      {t: "hard 45° sun", d: "razor shadows, muscle sculpt"},
+      {t: "golden hour backlight", d: "warm rim separation"},
+      {t: "moonlight blue", d: "cool, mystery"},
+      {t: "neon cold", d: "urban, cyberpunk"},
+      {t: "volumetric fog light", d: "beams, atmosphere"},
+      {t: "rim light red", d: "edge glow, dramatic"},
+      {t: "split face shadow", d: "50/50 contrast"},
+      {t: "cenital spotlight", d: "top-down isolation"},
+      {t: "softbox diffused", d: "beauty, clean"},
+      {t: "side light 45", d: "Rembrandt, volume"},
+      {t: "backlight silhouette", d: "shape separation"}
+    ]},
+    { id: "effects", name: "Effects", max: 2, tokens: [
+      {t: "shallow depth of field", d: "bokeh dissolution"},
+      {t: "bokeh circles", d: "specular orbs"},
+      {t: "lens flare anamorphic", d: "horizontal streak"},
+      {t: "motion blur on background", d: "kinetic energy"},
+      {t: "dust particles in light beams", d: "atmosphere"},
+      {t: "water droplets on lens", d: "rain immersion"},
+      {t: "film grain texture", d: "analog authentic"},
+      {t: "haze atmospheric", d: "depth, dream"}
+    ]},
+    { id: "textures", name: "Textures", max: 2, tokens: [
+      {t: "pores visible, skin texture max", d: "skin micro"},
+      {t: "sweat beads, skin wet", d: "athletic"},
+      {t: "fabric tension lines", d: "body mapping"},
+      {t: "wet fabric clinging", d: "weight, gravity"},
+      {t: "wrinkled leather grain", d: "age, wear"},
+      {t: "carbon fiber weave", d: "technical"}
+    ]},
+    { id: "cinematic", name: "Cinematic", max: 1, tokens: [
+      {t: "shot on ARRI Alexa 65", d: "clean modern"},
+      {t: "Cooke S7i lens", d: "warm cinematic"},
+      {t: "anamorphic lens", d: "horizontal stretch"},
+      {t: "Panavision Primo", d: "Hollywood classic"},
+      {t: "Zeiss Master Prime", d: "clinical sharp"},
+      {t: "film grain 35mm", d: "analog texture"},
+      {t: "color graded teal-orange", d: "blockbuster"},
+      {t: "2.39:1 letterbox", d: "widescreen"}
+    ]},
+    { id: "photographic", name: "Photographic", max: 1, tokens: [
+      {t: "shot on Hasselblad 500CM, medium format film", d: "rich depth"},
+      {t: "shot on Leica M6, 35mm film", d: "classic grain"},
+      {t: "shot on Phase One XF IQ4, 150MP", d: "clinical clarity"},
+      {t: "Kodak Portra 400 film stock", d: "warm skin"},
+      {t: "Fuji Velvia 50 film stock", d: "saturated nature"},
+      {t: "Ilford HP5 black and white film", d: "pronounced grain"},
+      {t: "Polaroid 600", d: "nostalgia"},
+      {t: "large format 8x10", d: "maximum detail"}
+    ]},
+    { id: "lens", name: "Lens", max: 1, tokens: [
+      {t: "14mm ultra-wide lens", d: "dilation, distortion"},
+      {t: "24mm wide angle", d: "expanded field"},
+      {t: "35mm lens", d: "street photography"},
+      {t: "50mm standard lens", d: "neutral perspective"},
+      {t: "85mm portrait lens", d: "compression, bokeh"},
+      {t: "135mm lens", d: "extreme compression"},
+      {t: "100mm macro lens", d: "microscopic topography"}
+    ]}
+  ],
+  packs: [
+    { name: "Brutal Physique", tokens: ["hard 45° sun", "close-up portrait", "shallow depth of field", "pores visible, skin texture max"] },
+    { name: "Cinematic Void", tokens: ["eye level shot", "centered subject", "softbox diffused", "shot on ARRI Alexa 65"] },
+    { name: "Street Night", tokens: ["neon cold", "35mm lens", "shot on Leica M6, 35mm film", "high angle shot"] },
+    { name: "Golden Epic", tokens: ["golden hour backlight", "full body shot", "shot on Hasselblad 500CM, medium format film", "dust particles in light beams"] }
+  ]
+};
+
+function injectCAVCSS() {
+  var style = document.createElement('style');
+  style.textContent = `
+    .cav-panel{margin:16px 0;padding:16px;background:var(--surface);border-radius:12px;border:1px solid var(--border)}
+    .cav-cat{margin:10px 0;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+    .cav-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .cav-cat-title .toggle-btn{font-size:14px;color:var(--accent3);cursor:pointer;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:var(--surface3);border-radius:6px}
+    .cav-chip{padding:8px 14px;background:var(--surface3);border:2px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;user-select:none;color:var(--text2);font-weight:500;margin:4px;display:inline-block}
+    .cav-chip.active{background:var(--accent3);border-color:var(--accent3);color:#fff;font-weight:700}
+    .cav-chip.pack{background:var(--surface3);border-color:var(--warn);color:var(--warn)}
+    .cav-chip.pack.active{background:var(--warn);color:#000}
+    .cav-preview{font-size:12px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:10px;margin:10px 0;font-family:monospace;line-height:1.5;min-height:32px}
+    .cav-badge{font-size:9px;color:var(--accent3);text-transform:uppercase;letter-spacing:1px;border:1px solid var(--accent3);padding:1px 6px;border-radius:6px;margin-left:6px}
+    .cav-apply{background:var(--accent3);color:#fff;width:100%;margin:10px 0;padding:14px;font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer}
+    .cav-clear{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 16px;font-size:13px;border-radius:10px;cursor:pointer;margin-left:8px}
+    .cav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .cav-count{font-size:11px;color:var(--text3)}
+  `;
+  document.head.appendChild(style);
+}
+
+function renderCAVCategory(cat, container, selectedSet) {
+  var div = document.createElement('div');
+  div.className = 'cav-cat';
+  div.id = 'cavcat-' + cat.id;
+  var title = document.createElement('div');
+  title.className = 'cav-cat-title';
+  title.innerHTML = '<span>' + esc(cat.name) + ' <span class="cav-count">(max ' + cat.max + ')</span></span><span class="toggle-btn" onclick="toggleCat(\'cavcat-' + cat.id + '\')">−</span>';
+  div.appendChild(title);
+  var body = document.createElement('div');
+  body.className = 'cat-body';
+  body.id = 'cavcat-' + cat.id + '-body';
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:6px';
+  cat.tokens.forEach(function(tok) {
+    var chip = document.createElement('span');
+    chip.className = 'cav-chip';
+    chip.textContent = tok.t;
+    chip.title = tok.d;
+    chip.dataset.token = tok.t;
+    chip.dataset.cat = cat.id;
+    chip.dataset.max = cat.max;
+    chip.onclick = function() {
+      var catId = this.dataset.cat;
+      var max = parseInt(this.dataset.max);
+      var siblings = this.parentElement.querySelectorAll('.cav-chip[data-cat="' + catId + '"].active');
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        selectedSet.delete(this.dataset.token);
+      } else {
+        if (siblings.length >= max) {
+          siblings[0].classList.remove('active');
+          selectedSet.delete(siblings[0].dataset.token);
+        }
+        this.classList.add('active');
+        selectedSet.add(this.dataset.token);
+      }
+      updateCAVPreview();
+    };
+    grid.appendChild(chip);
+  });
+  body.appendChild(grid);
+  div.appendChild(body);
+  container.appendChild(div);
+}
+
+function renderCAVPacks(container, selectedSet) {
+  var div = document.createElement('div');
+  div.className = 'cav-cat';
+  div.style.borderColor = 'var(--warn)';
+  var title = document.createElement('div');
+  title.className = 'cav-cat-title';
+  title.innerHTML = '<span>🔥 Quick Packs <span class="cav-count">(one-click combos)</span></span>';
+  div.appendChild(title);
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:6px';
+  CAV_RECIPES.packs.forEach(function(pack) {
+    var chip = document.createElement('span');
+    chip.className = 'cav-chip pack';
+    chip.textContent = pack.name;
+    chip.title = pack.tokens.join(' + ');
+    chip.onclick = function() {
+      document.querySelectorAll('.cav-chip.active').forEach(function(c) {
+        c.classList.remove('active');
+        selectedSet.delete(c.dataset.token);
+      });
+      pack.tokens.forEach(function(t) {
+        var el = document.querySelector('.cav-chip[data-token="' + t.replace(/"/g, '\\"') + '"]');
+        if (el) { el.classList.add('active'); selectedSet.add(t); }
+      });
+      updateCAVPreview();
+    };
+    grid.appendChild(chip);
+  });
+  div.appendChild(grid);
+  container.appendChild(div);
+}
+
+var CAV_SELECTED = new Set();
+
+function buildCAVPanel(containerId, previewId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  var header = document.createElement('div');
+  header.className = 'cav-row';
+  header.innerHTML = '<span style="font-size:13px;font-weight:700;color:var(--accent3)">🎬 CAV Recipe Engine <span class="cav-badge">v1</span></span>';
+  container.appendChild(header);
+  var tip = document.createElement('div');
+  tip.className = 'builder-help';
+  tip.textContent = 'Pick 1 Framing + 1 Angle + 1 Lighting. Max 4 tokens. Less is more.';
+  container.appendChild(tip);
+  renderCAVPacks(container, CAV_SELECTED);
+  CAV_RECIPES.categories.forEach(function(cat) {
+    renderCAVCategory(cat, container, CAV_SELECTED);
+  });
+  var preview = document.createElement('div');
+  preview.className = 'cav-preview';
+  preview.id = previewId || 'cav-preview-' + containerId;
+  preview.textContent = '(no tokens selected)';
+  container.appendChild(preview);
+  var btnRow = document.createElement('div');
+  btnRow.style.display = 'flex';
+  var apply = document.createElement('button');
+  apply.className = 'cav-apply';
+  apply.textContent = 'Apply Recipe to Prompt';
+  apply.onclick = function() { applyCAVRecipe(); };
+  var clear = document.createElement('button');
+  clear.className = 'cav-clear';
+  clear.textContent = 'Clear';
+  clear.onclick = function() {
+    CAV_SELECTED.clear();
+    document.querySelectorAll('.cav-chip.active').forEach(function(c) { c.classList.remove('active'); });
+    updateCAVPreview();
+  };
+  btnRow.appendChild(apply);
+  btnRow.appendChild(clear);
+  container.appendChild(btnRow);
+}
+
+function updateCAVPreview() {
+  var els = document.querySelectorAll('.cav-preview');
+  var txt = CAV_SELECTED.size ? Array.from(CAV_SELECTED).join(', ') : '(no tokens selected)';
+  els.forEach(function(el) { el.textContent = txt; });
+}
+
+function applyCAVRecipe() {
+  if (CAV_SELECTED.size === 0) { showToast('Select tokens first'); return; }
+  var tokens = Array.from(CAV_SELECTED).join(', ');
+  var activeTab = document.querySelector('.section.active');
+  var tabId = activeTab ? activeTab.id : 'forge';
+  var target = null;
+  
+  if (tabId === 'forge') {
+    target = document.getElementById('basePrompt');
+  } else if (tabId === 'native') {
+    var resultDiv = document.getElementById('nativeResult');
+    var resultText = resultDiv.querySelector('.prompt-text');
+    if (resultText) { target = {value: resultText.textContent, isText: true, el: resultText}; }
+    else { target = document.getElementById('nativeInput'); }
+  } else if (tabId === 'builder') {
+    var resultDiv = document.getElementById('builderResult');
+    var resultText = resultDiv.querySelector('.prompt-text');
+    if (resultText) { target = {value: resultText.textContent, isText: true, el: resultText}; }
+  } else if (tabId === 'vars') {
+    var cards = document.querySelectorAll('#results .prompt-text');
+    if (cards.length) {
+      cards.forEach(function(card) {
+        var prompt = card.textContent;
+        var paramIdx = prompt.indexOf(' --');
+        var newPrompt = paramIdx > -1 ? prompt.slice(0, paramIdx) + ', ' + tokens + prompt.slice(paramIdx) : prompt + ', ' + tokens;
+        card.textContent = newPrompt;
+      });
+      showToast('Recipe applied to ' + cards.length + ' prompts');
+      return;
+    }
+  } else if (tabId === 'blocks') {
+    target = document.getElementById('mixedOutput');
+  }
+  
+  if (!target) { showToast('No prompt to enhance'); return; }
+  var val = target.isText ? target.value : target.value;
+  if (!val || !val.trim()) { showToast('No prompt to enhance'); return; }
+  var paramIdx = val.indexOf(' --');
+  var newVal = paramIdx > -1 ? val.slice(0, paramIdx) + ', ' + tokens + val.slice(paramIdx) : val + ', ' + tokens;
+  if (target.isText) { target.el.textContent = newVal; }
+  else { target.value = newVal; }
+  showToast('CAV recipe applied (' + CAV_SELECTED.size + ' tokens)');
+}
+
+function injectCAVPanels() {
+  var forge = document.getElementById('forge');
+  var forgePanel = document.createElement('div');
+  forgePanel.id = 'cav-forge-panel';
+  forgePanel.className = 'cav-panel';
+  forge.appendChild(forgePanel);
+  buildCAVPanel('cav-forge-panel', 'cav-preview-forge');
+  
+  var builder = document.getElementById('builder');
+  var builderPanel = document.createElement('div');
+  builderPanel.id = 'cav-builder-panel';
+  builderPanel.className = 'cav-panel';
+  builderPanel.style.marginBottom = '80px';
+  var sticky = builder.querySelector('.sticky-actions');
+  if (sticky) builder.insertBefore(builderPanel, sticky);
+  else builder.appendChild(builderPanel);
+  buildCAVPanel('cav-builder-panel', 'cav-preview-builder');
+  
+  var blocks = document.getElementById('blocks');
+  var blocksPanel = document.createElement('div');
+  blocksPanel.id = 'cav-blocks-panel';
+  blocksPanel.className = 'cav-panel';
+  var mixedOut = document.getElementById('mixedOutput');
+  if (mixedOut) mixedOut.parentElement.insertBefore(blocksPanel, mixedOut);
+  else {
+    var mixer = document.getElementById('mixerPanel');
+    if (mixer) mixer.appendChild(blocksPanel);
+    else blocks.appendChild(blocksPanel);
+  }
+  buildCAVPanel('cav-blocks-panel', 'cav-preview-blocks');
+}
+
+injectCAVCSS();
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(injectCAVPanels, 100);
+});
 </script>
 </body>
 </html>
